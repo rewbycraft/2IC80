@@ -33,7 +33,7 @@ endif()
 
 add_subdirectory(libtins)
 
-add_executable(attack src/main.cpp)
+add_executable(attack src/main.cpp src/pdus/OSPFv3.cpp src/pdus/OSPFv3.h)
 target_compile_features(attack PUBLIC cxx_std_11)
 set_target_properties(attack PROPERTIES CXX_EXTENSIONS OFF)
 
