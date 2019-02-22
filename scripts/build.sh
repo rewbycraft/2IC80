@@ -11,5 +11,5 @@ cd "$(dirname "$(realpath "$0")")"/..
 mkdir -p build
 cd build
 cmake ..
-exec make
+exec make -j 6
 
