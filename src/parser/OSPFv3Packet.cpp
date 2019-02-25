@@ -33,8 +33,10 @@ const parser::bytevector parser::OSPFv3Packet::serialize() const {
 	parser::serializeObject(result, header);
 	
 	//Add subpacket to result.
-	auto subpacketVector = subpacket->serialize();
-	result.insert(result.end(), subpacketVector.begin(), subpacketVector.end());
+	if (subpacket) {
+		auto subpacketVector = subpacket->serialize();
+		result.insert(result.end(), subpacketVector.begin(), subpacketVector.end());
+	}
 
 	return result;
 }

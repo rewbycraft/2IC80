@@ -22,9 +22,7 @@ namespace parser {
 	
 	template<typename T>
 	void serializeObject(parser::bytevector &target, const T &source) {
-		uint8_t arr[sizeof(T)];
-		memcpy(arr, &source, sizeof(T));
-		target.insert(target.end(), arr, arr+sizeof(T));
+		target.insert(target.end(), (const uint8_t*)&source, ((const uint8_t*)&source)+sizeof(T));
 	}
 }
 

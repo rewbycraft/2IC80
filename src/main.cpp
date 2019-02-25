@@ -12,6 +12,12 @@ bool processPacket(const PDU &pdu) {
 	std::cout << "OSPF: version=" << int(ospf.getPacket().getHeader().version) << " router_id=" << Tins::IPv4Address(ospf.getPacket().getHeader().router_id) << std::endl;
 	if (ospf.getPacket().getHeader().type == parser::OSPFv3Packet::HELLO)
 		std::cout << "OSPF Hello: neighbors=" << std::dynamic_pointer_cast<parser::HelloPacket>(ospf.getPacket().getSubpacket())->getNeighbors().size() << std::endl;
+	
+	std::cout << "Re-encoded packet: " << std::hex;
+	for (auto& i : ospf.getPacket().serialize())
+		std::cout << int(i);
+	std::cout << std::dec << std::endl;
+	
 	return true;
 }
 
