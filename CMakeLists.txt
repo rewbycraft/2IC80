@@ -33,7 +33,7 @@ endif()
 
 add_subdirectory(libtins)
 
-add_executable(attack src/main.cpp src/pdus/OSPFv3.cpp src/pdus/OSPFv3.h)
+add_executable(attack src/main.cpp src/pdus/OSPFv3.cpp src/pdus/OSPFv3.h src/parser/internal.h src/parser/internal.cpp src/parser/Packet.cpp src/parser/Packet.h src/parser/OSPFv3Packet.cpp src/parser/OSPFv3Packet.h src/parser/MalformedPacketException.cpp src/parser/MalformedPacketException.h src/parser/HelloPacket.cpp src/parser/HelloPacket.h)
 target_compile_features(attack PUBLIC cxx_std_11)
 set_target_properties(attack PROPERTIES CXX_EXTENSIONS OFF)
 
