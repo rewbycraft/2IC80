@@ -6,6 +6,10 @@
 #include "MalformedPacketException.h"
 #include "internal.h"
 #include "HelloPacket.h"
+#include "DatabaseDescriptionPacket.h"
+#include "LinkStateRequestPacket.h"
+#include "LinkStateUpdatePacket.h"
+#include "LinkStateAcknowledgementPacket.h"
 
 parser::OSPFv3Packet::OSPFv3Packet() : Packet() {
 
@@ -18,12 +22,24 @@ parser::OSPFv3Packet::OSPFv3Packet(const parser::bytevector& data) : Packet(data
 		case HELLO:
 			subpacket = std::make_shared<parser::HelloPacket>(sub);
 			break;
-		case DATABASE_DESCRIPTION:break;
-		case LINK_STATE_REQUEST:break;
-		case LINK_STATE_UPDATE:break;
-		case LINK_STATE_ACK:break;
-		default:break;
+		case DATABASE_DESCRIPTION:
+			subpacket = std::make_shared<parser::DatabaseDescriptionPacket>(sub);
+			break;
+		case LINK_STATE_REQUEST:
+			subpacket = std::make_shared<parser::LinkStateRequestPacket>(sub);
+			break;
+		case LINK_STATE_UPDATE:
+			subpacket = std::make_shared<parser::LinkStateUpdatePacket>(sub);
+			break;
+		case LINK_STATE_ACK:
+			subpacket = std::make_shared<parser::LinkStateAcknowledgementPacket>(sub);
+			break;
+		default:
+			throw parser::MalformedPacketException("Invalid OSPF packet type.");
+			break;
 	}
+	
+	
 }
 
 const parser::bytevector parser::OSPFv3Packet::serialize() const {
