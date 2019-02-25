@@ -5,8 +5,8 @@
 #ifndef ATTACK_DATABASEDESCRIPTIONPACKET_H
 #define ATTACK_DATABASEDESCRIPTIONPACKET_H
 
-#include "Packet.h"
-#include "LSAPacket.h"
+#include "../Packet.h"
+#include "lsa/LSAPacket.h"
 
 namespace parser {
 	class DatabaseDescriptionPacket : public Packet {

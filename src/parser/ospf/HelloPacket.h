@@ -5,7 +5,7 @@
 #ifndef ATTACK_HELLOPACKET_H
 #define ATTACK_HELLOPACKET_H
 
-#include "Packet.h"
+#include "../Packet.h"
 
 namespace parser {
 	class HelloPacket : public Packet {

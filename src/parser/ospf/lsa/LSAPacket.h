@@ -5,7 +5,7 @@
 #ifndef ATTACK_LSAPACKET_H
 #define ATTACK_LSAPACKET_H
 
-#include "Packet.h"
+#include "../../Packet.h"
 #include <memory>
 
 namespace parser {

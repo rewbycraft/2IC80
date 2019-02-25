@@ -3,7 +3,7 @@
 //
 
 #include "LinkStateRequestPacket.h"
-#include "internal.h"
+#include "../internal.h"
 
 parser::LinkStateRequestPacket::LinkStateRequestPacket() : Packet() {
 

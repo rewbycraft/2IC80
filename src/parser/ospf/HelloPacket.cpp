@@ -3,8 +3,8 @@
 //
 
 #include "HelloPacket.h"
-#include "internal.h"
-#include "MalformedPacketException.h"
+#include "../internal.h"
+#include "../MalformedPacketException.h"
 
 parser::HelloPacket::HelloPacket() : Packet() {
 

@@ -5,7 +5,7 @@
 #ifndef ATTACK_OSPFV3PACKET_H
 #define ATTACK_OSPFV3PACKET_H
 
-#include "Packet.h"
+#include "../Packet.h"
 #include <memory>
 #include <tins/tins.h>
 #include <type_traits>

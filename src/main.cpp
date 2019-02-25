@@ -1,6 +1,6 @@
 #include <iostream>
 #include "pdus/OSPFv3.h"
-#include "parser/HelloPacket.h"
+#include "parser/ospf/HelloPacket.h"
 #include <tins/tins.h>
 
 using namespace Tins;

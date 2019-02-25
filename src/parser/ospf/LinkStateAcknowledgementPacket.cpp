@@ -3,7 +3,7 @@
 //
 
 #include "LinkStateAcknowledgementPacket.h"
-#include "MalformedPacketException.h"
+#include "../MalformedPacketException.h"
 
 parser::LinkStateAcknowledgementPacket::LinkStateAcknowledgementPacket() : Packet() {
 

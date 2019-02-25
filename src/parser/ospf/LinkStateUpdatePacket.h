@@ -2,18 +2,19 @@
 // Created by rewbycraft on 2/25/19.
 //
 
-#ifndef ATTACK_LINKSTATEACKNOWLEDGEMENTPACKET_H
-#define ATTACK_LINKSTATEACKNOWLEDGEMENTPACKET_H
+#ifndef ATTACK_LINKSTATEUPDATEPACKET_H
+#define ATTACK_LINKSTATEUPDATEPACKET_H
 
-#include "LSAPacket.h"
+#include "lsa/LSAPacket.h"
 
 namespace parser {
-	class LinkStateAcknowledgementPacket : public Packet {
+	class LinkStateUpdatePacket : public Packet {
+	private:
 		std::vector<std::shared_ptr<LSAPacket>> lsas;
 	public:
-		LinkStateAcknowledgementPacket();
+		LinkStateUpdatePacket();
 		
-		LinkStateAcknowledgementPacket(const bytevector &data);
+		LinkStateUpdatePacket(const bytevector &data);
 		
 		const bytevector serialize() const override;
 		
@@ -24,4 +25,4 @@ namespace parser {
 }
 
 
-#endif //ATTACK_LINKSTATEACKNOWLEDGEMENTPACKET_H
+#endif //ATTACK_LINKSTATEUPDATEPACKET_H

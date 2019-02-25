@@ -5,7 +5,7 @@
 #ifndef ATTACK_OSPFV3_H
 #define ATTACK_OSPFV3_H
 
-#include "../parser/OSPFv3Packet.h"
+#include "../parser/ospf/OSPFv3Packet.h"
 #include <tins/tins.h>
 
 using namespace Tins;

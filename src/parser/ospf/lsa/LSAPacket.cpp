@@ -3,7 +3,7 @@
 //
 
 #include "LSAPacket.h"
-#include "internal.h"
+#include "../../internal.h"
 
 parser::LSAPacket::LSAPacket() : Packet() {
 

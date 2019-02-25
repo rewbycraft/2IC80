@@ -3,8 +3,8 @@
 //
 
 #include "OSPFv3Packet.h"
-#include "MalformedPacketException.h"
-#include "internal.h"
+#include "../MalformedPacketException.h"
+#include "../internal.h"
 #include "HelloPacket.h"
 #include "DatabaseDescriptionPacket.h"
 #include "LinkStateRequestPacket.h"

@@ -4,7 +4,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include "DatabaseDescriptionPacket.h"
-#include "internal.h"
+#include "../internal.h"
 
 parser::DatabaseDescriptionPacket::DatabaseDescriptionPacket() : Packet() {
 

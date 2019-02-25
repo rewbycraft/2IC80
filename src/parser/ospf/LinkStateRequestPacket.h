@@ -5,8 +5,8 @@
 #ifndef ATTACK_LINKSTATEREQUESTPACKET_H
 #define ATTACK_LINKSTATEREQUESTPACKET_H
 
-#include "Packet.h"
-#include "LSAPacket.h"
+#include "../Packet.h"
+#include "lsa/LSAPacket.h"
 
 namespace parser {
 	class LinkStateRequestPacket : public Packet {
