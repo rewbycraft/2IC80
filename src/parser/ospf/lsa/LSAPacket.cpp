@@ -4,19 +4,23 @@
 
 #include "LSAPacket.h"
 #include "../../internal.h"
+#include "RouterLSAPacket.h"
 
 parser::LSAPacket::LSAPacket() : Packet() {
 
 }
 
 parser::LSAPacket::LSAPacket(const parser::bytevector &data) : Packet(data) {
-	parser::bytevector remainder = parser::deserializeObject(header, data);
-	
-	if (header.length != data.size())
+	const parser::bytevector remainder = parser::deserializeObject(header, data);
+	parser::byteswap(header);
+
+	if (header.length > data.size())
 		throw parser::MalformedPacketException("Length mismatch.");
 	
 	switch (header.function){
-		case ROUTER_LSA:break;
+		case ROUTER_LSA:
+			subpacket = std::make_shared<parser::RouterLSAPacket>(remainder);
+			break;
 		case NETWORK_LSA:break;
 		case INTER_AREA_PREFIX_LSA:break;
 		case INTER_AREA_ROUTER_LSA:break;
@@ -32,7 +36,12 @@ parser::LSAPacket::LSAPacket(const parser::bytevector &data) : Packet(data) {
 
 const parser::bytevector parser::LSAPacket::serialize() const {
 	parser::bytevector result;
-	serializeObject(result, header);
+	Header header1 = header;
+	
+	parser::byteswap(header1);
+	
+	serializeObject(result, header1);
+
 	if (subpacket) {
 		auto serializedSubpacket = subpacket->serialize();
 		result.insert(result.end(), serializedSubpacket.begin(), serializedSubpacket.end());

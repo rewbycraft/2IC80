@@ -12,9 +12,10 @@ parser::LinkStateUpdatePacket::LinkStateUpdatePacket() : Packet() {
 parser::LinkStateUpdatePacket::LinkStateUpdatePacket(const parser::bytevector &data) : Packet(data) {
 	uint32_t numLsas;
 	parser::bytevector remainder = parser::deserializeObject(numLsas, data);
+	parser::byteswap(numLsas);
 	
 	while(!remainder.empty()) {
-		std::shared_ptr<parser::LSAPacket> lsa = std::make_shared<parser::LSAPacket>();
+		std::shared_ptr<parser::LSAPacket> lsa = std::make_shared<parser::LSAPacket>(remainder);
 		auto s = lsa->serialize().size();
 		if (s > remainder.size())
 			throw parser::MalformedPacketException("AAAA");

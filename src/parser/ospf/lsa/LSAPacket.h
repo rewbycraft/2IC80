@@ -7,6 +7,7 @@
 
 #include "../../Packet.h"
 #include <memory>
+#include <boost/fusion/include/adapt_struct.hpp>
 
 namespace parser {
 	class LSAPacket : public Packet {
@@ -21,7 +22,7 @@ public:
 		uint32_t seq;
 		uint16_t checksum;
 		uint16_t length;
-	} Header;
+	} __attribute__ ((__packed__)) Header;
 private:
 		Header header;
 		std::shared_ptr<parser::Packet> subpacket;
@@ -42,5 +43,6 @@ private:
 	};
 }
 
+BOOST_FUSION_ADAPT_STRUCT(parser::LSAPacket::Header, age, options, function, id, advertising_router, seq, checksum, length)
 
 #endif //ATTACK_LSAPACKET_H

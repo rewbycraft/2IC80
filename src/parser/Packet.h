@@ -8,6 +8,9 @@
 #include <vector>
 #include <cstdint>
 
+typedef __int128 int128_t;
+typedef unsigned __int128 uint128_t;
+
 namespace parser {
 	
 	typedef std::vector<std::uint8_t> bytevector;

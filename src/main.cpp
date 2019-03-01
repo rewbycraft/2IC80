@@ -1,6 +1,7 @@
 #include <iostream>
 #include "pdus/OSPFv3.h"
 #include "parser/ospf/HelloPacket.h"
+#include "parser/ospf/LinkStateUpdatePacket.h"
 #include <tins/tins.h>
 
 using namespace Tins;
@@ -12,6 +13,10 @@ bool processPacket(const PDU &pdu) {
 	std::cout << "OSPF: version=" << int(ospf.getPacket().getHeader().version) << " router_id=" << Tins::IPv4Address(ospf.getPacket().getHeader().router_id) << std::endl;
 	if (ospf.getPacket().getHeader().type == parser::OSPFv3Packet::HELLO)
 		std::cout << "OSPF Hello: neighbors=" << std::dynamic_pointer_cast<parser::HelloPacket>(ospf.getPacket().getSubpacket())->getNeighbors().size() << std::endl;
+	if (ospf.getPacket().getHeader().type == parser::OSPFv3Packet::LINK_STATE_UPDATE) {
+		auto lsu = std::dynamic_pointer_cast<parser::LinkStateUpdatePacket>(ospf.getPacket().getSubpacket());
+		std::cout << "OSPF link state update: lsas=" << lsu->getLsas().size() << std::endl;
+	}
 	
 	std::cout << "Re-encoded packet: " << std::hex;
 	for (auto& i : ospf.getPacket().serialize())
