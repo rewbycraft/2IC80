@@ -10,6 +10,10 @@
 
 namespace parser {
 	/**
+	 * Modifies the given {@code targets} fields to compensate for the changed {@code change} fields
+	 * to keep the same checksum. Note that the {@code change} fields are only replaced
+	 * by {@code newValues} if, and only if, there exists values for the {@code targets} fields
+	 * such that the checksum remains equal after the change. Otherwise no input values are changed.
 	 *
 	 * @param targets a vector of pairs where the first element denotes the byte
 	 *     which can be modified, and the second the index of this byte relative
@@ -20,7 +24,7 @@ namespace parser {
 	 * @param newValues a vector denoting the new values to set for the bytes
 	 *     specified in {@code changed}.
 	 *
-	 * @return
+	 * @return {@code true} if the checksum is valid. {@code false} otherwise.
 	 */
 	bool modifyChecksum(
 			std::vector<std::pair<std::uint8_t *, std::uint8_t>> targets,
@@ -28,6 +32,9 @@ namespace parser {
 			std::vector<std::uint8_t> newValues);
 
 	/**
+	 * Calculates the LSA checksum over the given data.
+	 * Note that the given data MUST be in the right order.
+	 * 
 	 * @param data a vector of pairs where the first element denotes
 	 *     a pointer each (sub) header, and the second element denotes
 	 *     the length of that header.
@@ -35,6 +42,13 @@ namespace parser {
 	 */
 	uint16_t calcLSAChecksum(std::vector<std::pair<std::uint8_t *, std::uint8_t>> data);
 
+	/**
+	 * Verifies the LSA checksum.
+	 * Note that the given {@code data} MUST be in the right order.
+	 *
+	 * @param data
+	 * @return
+	 */
 	bool verifyLSAChecksum(std::vector<std::pair<std::uint8_t *, std::uint8_t>> data);
 }
 #endif //ATTACK_LSA_CHECKSUM_H

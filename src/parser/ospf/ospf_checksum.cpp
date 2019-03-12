@@ -6,14 +6,35 @@
 #include "ospf_checksum.h"
 
 
-std::uint16_t parser::calcOSPFChecksum(std::vector<std::pair<std::uint8_t *, std::uint8_t>> data)
+std::uint16_t parser::calcOSPFChecksum(uint128_t sourceAddress,
+		uint128_t destAddress, std::uint32_t length,
+		std::vector<std::pair<std::uint8_t *, std::uint8_t>> data))
 {
-	uint16_t hash = 0;
-	uint8_t pos = 0;
-	for (auto &header : data) {
-		for (std::uint8_t i = 0; i < header.second; i++) {
-			if (++pos == 13 || pos == 14) continue;
-			hash += header.first[i];
+	// Initialize hash.
+	std::uint16_t hash = 0;
+
+	// Add source address.
+	auto *p = (std::uint8_t *) &sourceAddress;
+	for (int i = 0; i < sizeof(uint128_t) / sizeof(std::uint8_t); i++) {
+		hash += p[i];
+	}
+
+	// Add destination address.
+	p = (uint8_t *) &destAddress;
+	for (std::uint8_t i = 0; i < sizeof(uint128_t) / sizeof(std::uint8_t); i++) {
+		hash += p[i];
+	}
+
+	// Add length value.
+	p = (uint8_t *) &length;
+	for (std::uint8_t i = 0; i < sizeof(std::uint32_t) / sizeof(std::uint8_t); i++) {
+		hash += p[i];
+	}
+
+	for (std::uint8_t i = 0; i < data.size(); i++) {
+		for (std::uint8_t j = 0; j < data[i].second; j++) {
+			if (i == 13 || i == 14) continue;
+			hash += header[i].first[j];
 		}
 	}
 	return hash;
@@ -23,6 +44,8 @@ bool parser::checkOSPFChecksum(uint128_t sourceAddress,
 		uint128_t destAddress, std::uint32_t length,
 		std::vector<std::pair<std::uint8_t *, std::uint8_t>> data)
 {
+	return calcOSPFCHecksum(sourceAddress, destAddress, length, data) == 0;
+	/*
 	// Initialize hash.
 	std::uint16_t hash = 0;
 
@@ -47,13 +70,13 @@ bool parser::checkOSPFChecksum(uint128_t sourceAddress,
 	// Add next header field.
 	hash += 89;
 
-	uint8_t pos = 0;
-	for (auto &header : data) {
-		for (std::uint8_t i = 0; i < header.second; i++) {
-			if (++pos == 13 || pos == 14) continue;
-			hash += header.first[i];
+	// Add data fields.
+	for (std::uint8_t i = 0; i < data.size(); i++) {
+		for (std::uint8_t j = 0; j < data[i].second; j++) {
+			if (i == 13 || i == 14) continue;
+			hash += header[i].first[j];
 		}
 	}
 
-	return hash == 0;
+	return hash == 0;*/
 }
