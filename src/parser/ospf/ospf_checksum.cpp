@@ -7,8 +7,7 @@
 
 
 std::uint16_t parser::calcOSPFChecksum(uint128_t sourceAddress,
-		uint128_t destAddress, std::uint32_t length,
-		std::vector<std::pair<std::uint8_t *, std::uint8_t>> data))
+		uint128_t destAddress, std::uint32_t length, parser::bytevector data))
 {
 	// Initialize hash.
 	std::uint16_t hash = 0;
@@ -40,9 +39,8 @@ std::uint16_t parser::calcOSPFChecksum(uint128_t sourceAddress,
 	return hash;
 }
 
-bool parser::checkOSPFChecksum(uint128_t sourceAddress,
-		uint128_t destAddress, std::uint32_t length,
-		std::vector<std::pair<std::uint8_t *, std::uint8_t>> data)
+bool parser::verifyOSPFChecksum(uint128_t sourceAddress,
+		uint128_t destAddress, std::uint32_t length, parser::bytevector data)
 {
 	return calcOSPFCHecksum(sourceAddress, destAddress, length, data) == 0;
 	/*

@@ -26,10 +26,13 @@ namespace parser {
 	 *
 	 * @return {@code true} if the checksum is valid. {@code false} otherwise.
 	 */
-	bool modifyChecksum(
+	 std::optional<parser::bytevector> parser::modifyChecksum(const parser::bytevector& data,
+	 		const std::vector<size_t>& changeableIndexes, const std::uint16_t& targetChecksum)
+/*
 			std::vector<std::pair<std::uint8_t *, std::uint8_t>> targets,
 			std::vector<std::pair<std::uint8_t *, std::uint8_t>> change,
 			std::vector<std::uint8_t> newValues);
+*/
 
 	/**
 	 * Calculates the LSA checksum over the given data.
@@ -40,7 +43,7 @@ namespace parser {
 	 *     the length of that header.
 	 * @return the checksum of the LSA header.
 	 */
-	uint16_t calcLSAChecksum(std::vector<std::pair<std::uint8_t *, std::uint8_t>> data);
+	std::uint16_t parser::calcLSAChecksum(const parser::bytevector& data)
 
 	/**
 	 * Verifies the LSA checksum.
@@ -49,6 +52,6 @@ namespace parser {
 	 * @param data
 	 * @return
 	 */
-	bool verifyLSAChecksum(std::vector<std::pair<std::uint8_t *, std::uint8_t>> data);
+	std::uint16_t parser::calcLSAChecksum(const parser::bytevector& data)
 }
 #endif //ATTACK_LSA_CHECKSUM_H
