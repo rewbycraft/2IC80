@@ -50,6 +50,18 @@ namespace std {
 	constexpr static int128_t make_int128(uint64_t high, uint64_t low) {
 		return (uint128_t)std::make_uint128(high, low);
 	}
+	constexpr static uint64_t uint128_high(uint128_t i) {
+		return static_cast<uint64_t>(i >> 64);
+	}
+	constexpr static uint64_t uint128_low(uint128_t i) {
+		return static_cast<uint64_t>(i);
+	}
+	constexpr static uint64_t int128_high(int128_t i) {
+		return static_cast<uint64_t>(i >> 64);
+	}
+	constexpr static uint64_t int128_low(int128_t i) {
+		return static_cast<uint64_t>(i);
+	}
 }
 
 #endif //ATTACK_INT128_H

@@ -18,6 +18,16 @@
 namespace parser {
 	typedef std::vector<std::uint8_t> bytevector;
 	
+	//Based on https://stackoverflow.com/a/54446459
+	template <typename T, bool = std::is_enum<T>::value>
+	struct relaxed_underlying_type {
+		using type = typename std::underlying_type<T>::type;
+	};
+	template <typename T>
+	struct relaxed_underlying_type<T, false> {
+		using type = T;
+	};
+	
 	//Use this to make a type not be byteswapped.
 	template<typename T>
 	class BigEndian {
@@ -39,10 +49,18 @@ namespace parser {
 	constexpr T byteswap_impl(T i, std::index_sequence<N...>) {
 		return ((((i >> N * CHAR_BIT) & (T) (unsigned char) (-1)) << ((sizeof(T) - 1 - N) * CHAR_BIT)) | ...);
 	};
-
+	
 	template<class T, class U = typename std::make_unsigned<T>::type>
 	constexpr T byteswap(T i) {
 		return byteswap_impl<U>(i, std::make_index_sequence<sizeof(T)>{});
+	}
+	
+	constexpr uint128_t byteswap(uint128_t i) {
+		return std::make_uint128(byteswap(std::uint128_low(i)), byteswap(std::uint128_high(i)));
+	}
+	
+	constexpr uint128_t byteswap(int128_t i) {
+		return byteswap((uint128_t) i);
 	}
 	
 	//Byteswap: Case sequence (declaration)
@@ -52,17 +70,9 @@ namespace parser {
 	
 	//Byteswap: Case integer (declaration)
 	template<typename T>
-	typename std::enable_if<std::is_integral<T>{}, void>::type
+	typename std::enable_if<std::is_integral<T>{} || std::is_enum<T>{}, void>::type
 	inline static recursiveEndianSwap(T &in) {
-		in = byteswap(in);
-	}
-	
-	//Byteswap: Case enum (declaration)
-	template<typename T>
-	typename std::enable_if<std::is_enum<T>{}, void>::type
-	inline static recursiveEndianSwap(T &in) {
-		//Enum is essentially an integral type.
-		in = static_cast<T>(byteswap(static_cast<typename std::underlying_type<T>::type>(in)));
+		in = static_cast<T>(byteswap(static_cast<typename relaxed_underlying_type<T>::type>(in)));
 	}
 	
 	//Byteswap: Case BigEndian/no-op
