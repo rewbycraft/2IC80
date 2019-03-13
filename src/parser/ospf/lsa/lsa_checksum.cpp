@@ -6,15 +6,16 @@
 #include "lsa_checksum.h"
 
 
-std::pair<std::uint8_t, std::uint8_t> revertPartLSAChecksum(uint16_t& checksum, std::size_t size)
+std::pair<std::uint8_t, std::uint8_t> revertPartLSAChecksum(const uint16_t& checksum, std::size_t size)
 {
 	uint8_t x = (checksum >> 8) & 0xFF;
 	uint8_t y = checksum & 0xFF;
-	uint8_t alpha = data.size() - 17;
-	uint8_t beta = data.size() - 16;
+	uint8_t alpha = size - 17;
+	uint8_t beta = size - 16;
 
 	uint8_t c0 = -x - y;
 	uint8_t c1 = -beta*x - alpha*y;
+	return { c0, c1 };
 }
 
 std::pair<std::uint8_t, std::uint8_t> calcLSAChecksumPart(const parser::bytevector& data, bool verify)
@@ -25,7 +26,7 @@ std::pair<std::uint8_t, std::uint8_t> calcLSAChecksumPart(const parser::bytevect
 	uint8_t pos = 0;
 	for (auto &header : data) {
 		if (verify || (++pos != 17 && pos != 18)) {
-			c0 += header.first[i];
+			c0 += header;
 		}
 
 		c1 += c0;
@@ -35,7 +36,7 @@ std::pair<std::uint8_t, std::uint8_t> calcLSAChecksumPart(const parser::bytevect
 }
 
 
-std::optional<std::vector<std::pair<std::uint8_t, std::uint8_t>>> parser::modifyChecksum(
+std::optional<std::vector<std::pair<std::uint8_t, std::size_t>>> parser::modifyChecksum(
 		const parser::bytevector& data, const std::vector<std::size_t>& targetIndices,
 		const std::uint16_t& targetChecksum)
 {
@@ -48,28 +49,33 @@ std::optional<std::vector<std::pair<std::uint8_t, std::uint8_t>>> parser::modify
 	}
 	*/
 	// Determine which fields are allowed to be changed.
-	std::vector<uint8_t, uint8_t> targets;
-	for (std::size_t& i : targetIndices) {
-		targets.push_back(data[i], i);
+	std::vector<std::pair<uint8_t, size_t>> targets;
+	for (std::size_t i : targetIndices) {
+		targets.push_back({data[i], i});
 	}
 
-	// Determine the amount the checksum has been changed.
-	std::uint16_t checksumPart = calcLSAChecksumPart(data, false);
-	std::uint16_t revertedChecksum;
-	std::uint16_t checksumDiff = checksum - targetChecksum;
-	std::uint8_t c0_diff = (checksumDiff >> 8) & 0xFF;
-	std::uint8_t c1_diff = checksumDiff & 0xFF;
+	// Determine the amount c0 and c1 were changed.
+	std::pair<std::uint8_t, std::uint8_t> checksumPart = calcLSAChecksumPart(data, false);
+	std::pair<std::uint8_t, std::uint8_t> revertedChecksum = revertPartLSAChecksum(targetChecksum, data.size());
+	std::uint8_t c0_diff = checksumPart.first - revertedChecksum.first;
+	std::uint8_t c1_diff = checksumPart.second - revertedChecksum.second;
 
-	std::uint8_t div = targets[1].first - targets[0].first;
-	if (interRes1 / div * div != c0_diff ||
-			interRes2 / div * div != c1_diff) {
+	// Calculate part of the solution.
+	std::uint8_t div = targets[0].second - targets[1].second;
+	std::uint8_t sub_dt0 = targets[1].second * c0_diff - c1_diff;
+	std::uint8_t sub_dt1 = targets[0].second * c0_diff + c1_diff;
+
+	std::uint8_t dt0 = sub_dt0 / div;
+	std::uint8_t dt1 = sub_dt1 / div;
+	// Check if there is a solution available.
+	if (dt0 * div != sub_dt0 || dt1 * div != sub_dt1) {
 		return std::nullopt;
 	}
 
-
-	targets[0].first = targets[0].first+ c0_diff / div;
-	targets[1].first = targets[1].first + c1_diff / div;
-	return { changedVector };
+	// Determine and return the result.
+	targets[0].first = targets[0].first + dt0 / div;
+	targets[1].first = targets[1].first + dt1 / div;
+	return { targets };
 }
 
 std::uint16_t parser::calcLSAChecksum(const parser::bytevector& data)

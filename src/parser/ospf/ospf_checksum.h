@@ -22,8 +22,8 @@ namespace parser {
 	 * @param data the data stream of the OSPF header.
 	 * @return the hash of the OSPF header.
 	 */
-	std::uint16_t calcOSPFChecksum(uint128_t sourceAddress,
-			uint128_t destAddress, std::uint32_t length, parser::bytevector data);
+	std::uint16_t calcOSPFChecksum(uint128_t sourceAddress, uint128_t destAddress,
+			std::uint32_t length, bytevector data);
 
 	/**
 	 * Verifies the OSPF checksum.
@@ -36,8 +36,8 @@ namespace parser {
 	 * @param data the data stream of the OSPF header.
 	 * @return {@code true} if the hash in this OSPF header was valid. {@code false} otherwise.
 	 */
-	bool verifyOSPFChecksum(uint128_t sourceAddress,
-	                                uint128_t destAddress, std::uint32_t length, parser::bytevector data);
+	bool verifyOSPFChecksum(uint128_t sourceAddress, uint128_t destAddress,
+			std::uint32_t length, bytevector data);
 
 
 }
