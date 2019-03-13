@@ -25,9 +25,9 @@ namespace parser {
 	 *     specified in {@code changed}.
 	 *
 	 * @return {@code true} if the checksum is valid. {@code false} otherwise.
-	 */
-	 std::optional<parser::bytevector> modifyChecksum(const parser::bytevector& data,
-	 		const std::vector<size_t>& changeableIndexes, const std::uint16_t& targetChecksum);
+	 */std::optional<std::vector<std::pair<std::uint8_t, std::size_t>>> modifyChecksum(
+			const parser::bytevector& data, const std::vector<std::size_t>& targetIndices,
+			const std::uint16_t& targetChecksum);
 /*
 			std::vector<std::pair<std::uint8_t *, std::uint8_t>> targets,
 			std::vector<std::pair<std::uint8_t *, std::uint8_t>> change,
@@ -52,6 +52,6 @@ namespace parser {
 	 * @param data
 	 * @return
 	 */
-	std::uint16_t calcLSAChecksum(const parser::bytevector& data);
+	bool verifyLSAChecksum(const bytevector& data);
 }
 #endif //ATTACK_LSA_CHECKSUM_H
