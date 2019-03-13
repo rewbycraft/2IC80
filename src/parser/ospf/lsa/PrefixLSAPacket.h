@@ -33,5 +33,6 @@ namespace parser {
 	std::pair<std::shared_ptr<PrefixLSAPacket>, const bytevector> extractPrefix(const bytevector& input);
 }
 
+BOOST_FUSION_ADAPT_STRUCT(parser::PrefixLSAPacket::Header, (uint8_t, length), (uint8_t, options), (uint16_t, special), (uint128_t, address))
 
 #endif //ATTACK_PREFIXLSAPACKET_H

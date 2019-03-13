@@ -3,9 +3,11 @@ cmake_minimum_required(VERSION 3.1...3.13)
 if(${CMAKE_VERSION} VERSION_LESS 3.12)
     cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif()
-
+cmake_policy(SET CMP0077 NEW)
 SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 SET(LIBTINS_BUILD_SHARED OFF)
+SET(LIBTINS_BUILD_TESTS OFF)
+set(LIBTINS_ENABLE_CXX11 ON)
 
 project(attack VERSION 1.0 DESCRIPTION "Disguised LSA attack" LANGUAGES C CXX)
 
@@ -39,10 +41,44 @@ set(Boost_USE_STATIC_RUNTIME ON)
 find_package(Boost REQUIRED COMPONENTS system)
 message(STATUS "Boost version: ${Boost_VERSION}")
 
-add_executable(attack src/main.cpp src/pdus/OSPFv3.cpp src/pdus/OSPFv3.h src/parser/internal.h src/parser/internal.cpp src/parser/Packet.cpp src/parser/Packet.h src/parser/ospf/OSPFv3Packet.cpp src/parser/ospf/OSPFv3Packet.h src/parser/MalformedPacketException.cpp src/parser/MalformedPacketException.h src/parser/ospf/HelloPacket.cpp src/parser/ospf/HelloPacket.h src/parser/ospf/lsa/LSAPacket.cpp src/parser/ospf/lsa/LSAPacket.h src/parser/ospf/DatabaseDescriptionPacket.cpp src/parser/ospf/DatabaseDescriptionPacket.h src/parser/ospf/LinkStateRequestPacket.cpp src/parser/ospf/LinkStateRequestPacket.h src/parser/ospf/LinkStateUpdatePacket.cpp src/parser/ospf/LinkStateUpdatePacket.h src/parser/ospf/LinkStateAcknowledgementPacket.cpp src/parser/ospf/LinkStateAcknowledgementPacket.h src/parser/ospf/lsa/PrefixLSAPacket.cpp src/parser/ospf/lsa/PrefixLSAPacket.h src/parser/ospf/lsa/RouterLSAPacket.cpp src/parser/ospf/lsa/RouterLSAPacket.h)
-target_compile_features(attack PUBLIC cxx_std_11)
-set_target_properties(attack PROPERTIES CXX_EXTENSIONS OFF)
+add_library(attack_lib STATIC src/pdus/OSPFv3.cpp src/pdus/OSPFv3.h src/parser/internal.h src/parser/internal.cpp src/parser/Packet.cpp src/parser/Packet.h src/parser/ospf/OSPFv3Packet.cpp src/parser/ospf/OSPFv3Packet.h src/parser/MalformedPacketException.cpp src/parser/MalformedPacketException.h src/parser/ospf/HelloPacket.cpp src/parser/ospf/HelloPacket.h src/parser/ospf/lsa/LSAPacket.cpp src/parser/ospf/lsa/LSAPacket.h src/parser/ospf/DatabaseDescriptionPacket.cpp src/parser/ospf/DatabaseDescriptionPacket.h src/parser/ospf/LinkStateRequestPacket.cpp src/parser/ospf/LinkStateRequestPacket.h src/parser/ospf/LinkStateUpdatePacket.cpp src/parser/ospf/LinkStateUpdatePacket.h src/parser/ospf/LinkStateAcknowledgementPacket.cpp src/parser/ospf/LinkStateAcknowledgementPacket.h src/parser/ospf/lsa/PrefixLSAPacket.cpp src/parser/ospf/lsa/PrefixLSAPacket.h src/parser/ospf/lsa/RouterLSAPacket.cpp src/parser/ospf/lsa/RouterLSAPacket.h)
+target_compile_features(attack_lib PUBLIC cxx_std_11)
+set_target_properties(attack_lib PROPERTIES CXX_EXTENSIONS OFF)
 
-target_link_libraries(attack tins Boost::system)
+target_link_libraries(attack_lib tins Boost::system)
+target_include_directories(attack_lib PRIVATE ${PROJECT_SOURCE_DIR}/libtins/include ${PROJECT_SOURCE_DIR}/spdlog/include)
+
+add_executable(attack src/main.cpp)
 target_include_directories(attack PRIVATE ${PROJECT_SOURCE_DIR}/libtins/include ${PROJECT_SOURCE_DIR}/spdlog/include)
+target_link_libraries(attack attack_lib)
+
+option(PACKAGE_TESTS "Build the tests" ON)
+if(PACKAGE_TESTS)
+    enable_testing()
+    add_subdirectory(googletest)
+    mark_as_advanced(
+            BUILD_GMOCK BUILD_GTEST BUILD_SHARED_LIBS
+            gmock_build_tests gtest_build_samples gtest_build_tests
+            gtest_disable_pthreads gtest_force_shared_crt gtest_hide_internal_symbols
+    )
+
+    set_target_properties(gtest PROPERTIES FOLDER googletest)
+    set_target_properties(gtest_main PROPERTIES FOLDER googletest)
+    set_target_properties(gmock PROPERTIES FOLDER googletest)
+    set_target_properties(gmock_main PROPERTIES FOLDER googletest)
+
+    macro(package_add_test TESTNAME)
+        add_executable(attack_${TESTNAME} ${ARGN})
+        target_link_libraries(attack_${TESTNAME} gtest gmock gtest_main)
+        add_test(NAME attack_${TESTNAME} COMMAND attack_${TESTNAME})
+        set_target_properties(attack_${TESTNAME} PROPERTIES FOLDER tests)
+        target_include_directories(attack_${TESTNAME} PUBLIC ${PROJECT_SOURCE_DIR}/src)
+        target_link_libraries(attack_${TESTNAME} attack_lib)
+        add_dependencies(attack attack_${TESTNAME})
+    endmacro()
+    #add_custom_command(TARGET attack POST_BUILD COMMAND ctest -C $<CONFIGURATION> -R attack_.* --output-on-failure)
+    
+    package_add_test(endiantest tests/endiantest.cpp)
+    package_add_test(parsertest tests/parsertest.cpp)
+endif()
 

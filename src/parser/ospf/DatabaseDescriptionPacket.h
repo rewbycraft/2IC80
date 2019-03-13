@@ -7,13 +7,13 @@
 
 #include "../Packet.h"
 #include "lsa/LSAPacket.h"
+#include <boost/fusion/include/adapt_struct.hpp>
 
 namespace parser {
 	class DatabaseDescriptionPacket : public Packet {
 	public:
 		typedef struct {
-			uint8_t empty;
-			uint32_t options : 24;
+			uint32_t options;
 			uint16_t interface_mtu;
 			uint16_t database_options;
 			uint32_t dd_seq;
@@ -37,6 +37,8 @@ namespace parser {
 		void setLsas(const std::vector<std::shared_ptr<LSAPacket>> &lsas);
 	};
 }
+
+BOOST_FUSION_ADAPT_STRUCT(parser::DatabaseDescriptionPacket::Header, (uint32_t, options), (uint16_t, interface_mtu), (uint16_t, database_options), (uint32_t, dd_seq))
 
 
 #endif //ATTACK_DATABASEDESCRIPTIONPACKET_H

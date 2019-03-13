@@ -12,35 +12,39 @@ parser::LSAPacket::LSAPacket() : Packet() {
 
 parser::LSAPacket::LSAPacket(const parser::bytevector &data) : Packet(data) {
 	const parser::bytevector remainder = parser::deserializeObject(header, data);
-	parser::byteswap(header);
-
-	if (header.length > data.size())
-		throw parser::MalformedPacketException("Length mismatch.");
 	
-	switch (header.function){
-		case ROUTER_LSA:
-			subpacket = std::make_shared<parser::RouterLSAPacket>(remainder);
-			break;
-		case NETWORK_LSA:break;
-		case INTER_AREA_PREFIX_LSA:break;
-		case INTER_AREA_ROUTER_LSA:break;
-		case AS_EXTERNAL_LSA:break;
-		case GROUP_MEMBERSHIP_LSA:break;
-		case NSSA_LSA:break;
-		case LINK_LSA:break;
-		case INTRA_AREA_PREFIX_LSA:break;
-		default:
-			throw parser::MalformedPacketException("Invalid LSA type.");
+	if (!remainder.empty()) {
+		switch (header.getFunction()) {
+			case ROUTER_LSA:
+				subpacket = std::make_shared<parser::RouterLSAPacket>(remainder);
+				break;
+			case NETWORK_LSA:
+				break;
+			case INTER_AREA_PREFIX_LSA:
+				break;
+			case INTER_AREA_ROUTER_LSA:
+				break;
+			case AS_EXTERNAL_LSA:
+				break;
+			case GROUP_MEMBERSHIP_LSA:
+				break;
+			case NSSA_LSA:
+				break;
+			case LINK_LSA:
+				break;
+			case INTRA_AREA_PREFIX_LSA:
+				break;
+			default:
+				throw parser::MalformedPacketException("Invalid LSA type.");
+		}
+	} else {
+		subpacket = nullptr;
 	}
 }
 
 const parser::bytevector parser::LSAPacket::serialize() const {
 	parser::bytevector result;
-	Header header1 = header;
-	
-	parser::byteswap(header1);
-	
-	serializeObject(result, header1);
+	serializeObject(result, header);
 
 	if (subpacket) {
 		auto serializedSubpacket = subpacket->serialize();

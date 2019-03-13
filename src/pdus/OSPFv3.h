@@ -26,7 +26,7 @@ namespace pdu {
 		
 		PDUType pdu_type() const override;
 		
-		uint32_t size() const override;
+		uint32_t size() const;
 		
 		const parser::OSPFv3Packet &getPacket() const;
 	

@@ -9,6 +9,7 @@
 #include <memory>
 #include <tins/tins.h>
 #include <type_traits>
+#include <boost/fusion/include/adapt_struct.hpp>
 
 namespace parser {
 	class OSPFv3Packet : public Packet {
@@ -49,6 +50,8 @@ namespace parser {
 		
 	};
 }
+
+BOOST_FUSION_ADAPT_STRUCT(parser::OSPFv3Packet::Header, (uint8_t, version), (parser::OSPFv3Packet::Type, type), (uint16_t, packet_length), (uint32_t, router_id), (uint32_t, area_id), (uint16_t, checksum), (uint8_t, instance_id), (uint8_t, reserved))
 
 
 #endif //ATTACK_OSPFV3PACKET_H

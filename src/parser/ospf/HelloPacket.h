@@ -6,14 +6,14 @@
 #define ATTACK_HELLOPACKET_H
 
 #include "../Packet.h"
+#include <boost/fusion/include/adapt_struct.hpp>
 
 namespace parser {
 	class HelloPacket : public Packet {
 	public:
 		typedef struct {
 			uint32_t interface_id;
-			uint8_t rtr_priority;
-			uint32_t options : 24;
+			uint32_t options;
 			uint16_t hello_interval;
 			uint16_t router_dead_interval;
 			uint32_t designated_router_id;
@@ -40,5 +40,6 @@ namespace parser {
 	};
 }
 
+BOOST_FUSION_ADAPT_STRUCT(parser::HelloPacket::Header, (uint32_t, interface_id), (uint16_t, hello_interval), (uint16_t, router_dead_interval), (uint32_t, designated_router_id), (uint32_t, backup_designated_router_id))
 
 #endif //ATTACK_HELLOPACKET_H

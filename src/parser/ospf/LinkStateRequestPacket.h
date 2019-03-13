@@ -13,8 +13,7 @@ namespace parser {
 	public:
 		typedef struct {
 			uint16_t empty;
-			uint8_t options : 3;
-			LSAPacket::Function function : 13;
+			uint16_t options;
 			uint32_t id;
 			uint32_t advertising_router;
 		} RequestedLSA;
@@ -33,5 +32,6 @@ namespace parser {
 	};
 }
 
+BOOST_FUSION_ADAPT_STRUCT(parser::LinkStateRequestPacket::RequestedLSA, (uint16_t, empty), (uint16_t, options), (uint32_t, id), (uint32_t, advertising_router))
 
 #endif //ATTACK_LINKSTATEREQUESTPACKET_H

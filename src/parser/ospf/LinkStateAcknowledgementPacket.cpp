@@ -10,14 +10,15 @@ parser::LinkStateAcknowledgementPacket::LinkStateAcknowledgementPacket() : Packe
 }
 
 parser::LinkStateAcknowledgementPacket::LinkStateAcknowledgementPacket(const parser::bytevector &data) : Packet(data) {
-	parser::bytevector remainder = data;
+	parser::bytevector remainder(data);
+	
+	auto lsaHeaderSize = sizeof(parser::LSAPacket::Header);
 	
 	while(!remainder.empty()) {
-		std::shared_ptr<parser::LSAPacket> lsa = std::make_shared<parser::LSAPacket>();
-		auto s = lsa->serialize().size();
-		if (s > remainder.size())
+		std::shared_ptr<parser::LSAPacket> lsa = std::make_shared<parser::LSAPacket>(parser::bytevector(remainder.begin(), remainder.begin()+lsaHeaderSize));
+		if (lsaHeaderSize > remainder.size())
 			throw parser::MalformedPacketException("AAAA");
-		remainder.erase(remainder.begin(), remainder.begin() + s);
+		remainder = parser::bytevector(remainder.begin()+lsaHeaderSize, remainder.end());
 		lsas.push_back(lsa);
 	}
 }
@@ -25,6 +26,9 @@ parser::LinkStateAcknowledgementPacket::LinkStateAcknowledgementPacket(const par
 const parser::bytevector parser::LinkStateAcknowledgementPacket::serialize() const {
 	parser::bytevector result;
 	for (auto& lsa : lsas) {
+		if (lsa->getSubpacket() != nullptr)
+			throw parser::MalformedPacketException("Link state acknowledgements use empty LSAs.");
+		
 		auto serializedLsa = lsa->serialize();
 		result.insert(result.end(), serializedLsa.begin(), serializedLsa.end());
 	}

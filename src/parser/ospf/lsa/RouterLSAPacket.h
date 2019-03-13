@@ -11,9 +11,7 @@ namespace parser {
 	class RouterLSAPacket : public Packet {
 	public:
 		typedef struct {
-			uint8_t preoptions;
-			uint8_t options : 3;
-			LSAPacket::Function function : 13;
+			uint32_t options;
 		} Header;
 		typedef struct {
 			uint8_t type;
@@ -43,5 +41,8 @@ namespace parser {
 	};
 }
 
+BOOST_FUSION_ADAPT_STRUCT(parser::RouterLSAPacket::Header, (uint32_t, options))
+
+BOOST_FUSION_ADAPT_STRUCT(parser::RouterLSAPacket::InterfaceHeader, (uint8_t, type), (uint8_t, unused), (uint16_t, metric), (uint32_t, interface_id), (uint32_t, neighbor_interface_id), (uint32_t, neighbor_router_id))
 
 #endif //ATTACK_ROUTERLSAPACKET_H

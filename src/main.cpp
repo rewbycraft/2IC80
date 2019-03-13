@@ -2,6 +2,7 @@
 #include "pdus/OSPFv3.h"
 #include "parser/ospf/HelloPacket.h"
 #include "parser/ospf/LinkStateUpdatePacket.h"
+#include "parser/ospf/LinkStateAcknowledgementPacket.h"
 #include <tins/tins.h>
 
 using namespace Tins;
@@ -16,6 +17,10 @@ bool processPacket(const PDU &pdu) {
 	if (ospf.getPacket().getHeader().type == parser::OSPFv3Packet::LINK_STATE_UPDATE) {
 		auto lsu = std::dynamic_pointer_cast<parser::LinkStateUpdatePacket>(ospf.getPacket().getSubpacket());
 		std::cout << "OSPF link state update: lsas=" << lsu->getLsas().size() << std::endl;
+	}
+	if (ospf.getPacket().getHeader().type == parser::OSPFv3Packet::LINK_STATE_ACK) {
+		auto lsack = std::dynamic_pointer_cast<parser::LinkStateAcknowledgementPacket>(ospf.getPacket().getSubpacket());
+		std::cout << "OSPF link state acknowledgement: lsas=" << lsack->getLsas().size() << std::endl;
 	}
 	
 	std::cout << "Re-encoded packet: " << std::hex;
