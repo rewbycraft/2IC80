@@ -5,17 +5,15 @@
 #ifndef ATTACK_INTERNAL_H
 #define ATTACK_INTERNAL_H
 
+#include <type_traits>
 #include "MalformedPacketException.h"
 #include <vector>
 #include <cstdint>
 #include <cstring>
 #include <boost/fusion/include/algorithm.hpp>
-#include <type_traits>
 #include <utility>
 #include <climits>
-
-typedef __int128 int128_t;
-typedef unsigned __int128 uint128_t;
+#include "../int128.h"
 
 namespace parser {
 	typedef std::vector<std::uint8_t> bytevector;
@@ -41,27 +39,7 @@ namespace parser {
 	constexpr T byteswap_impl(T i, std::index_sequence<N...>) {
 		return ((((i >> N * CHAR_BIT) & (T) (unsigned char) (-1)) << ((sizeof(T) - 1 - N) * CHAR_BIT)) | ...);
 	};
-	
-	constexpr uint128_t byteswap(uint128_t i) {
-		const auto a = static_cast<const uint32_t>(i);
-		const auto b = static_cast<const uint64_t>(i >> 32);
-		const auto c = static_cast<const uint32_t>(i >> 96);
-		const auto sa = byteswap_impl<uint32_t>(a, std::make_index_sequence<sizeof(uint32_t)>{});
-		const auto sb = byteswap_impl<uint64_t>(b, std::make_index_sequence<sizeof(uint64_t)>{});
-		const auto sc = byteswap_impl<uint32_t>(c, std::make_index_sequence<sizeof(uint32_t)>{});
-		return ((uint128_t)sa << 96) | ((uint128_t)sb << 32) | sc;
-	}
-	
-	constexpr uint128_t byteswap(int128_t i) {
-		const auto a = static_cast<const uint32_t>(i);
-		const auto b = static_cast<const uint64_t>(i >> 32);
-		const auto c = static_cast<const uint32_t>(i >> 96);
-		const auto sa = byteswap_impl<uint32_t>(a, std::make_index_sequence<sizeof(uint32_t)>{});
-		const auto sb = byteswap_impl<uint64_t>(b, std::make_index_sequence<sizeof(uint64_t)>{});
-		const auto sc = byteswap_impl<uint32_t>(c, std::make_index_sequence<sizeof(uint32_t)>{});
-		return ((uint128_t)sa << 96) | ((uint128_t)sb << 32) | sc;
-	}
-	
+
 	template<class T, class U = typename std::make_unsigned<T>::type>
 	constexpr T byteswap(T i) {
 		return byteswap_impl<U>(i, std::make_index_sequence<sizeof(T)>{});
@@ -76,15 +54,6 @@ namespace parser {
 	template<typename T>
 	typename std::enable_if<std::is_integral<T>{}, void>::type
 	inline static recursiveEndianSwap(T &in) {
-		in = byteswap(in);
-	}
-	
-	//Because is_integral does not recognise 128 bit types.
-	inline static void recursiveEndianSwap(uint128_t &in) {
-		in = byteswap(in);
-	}
-	
-	inline static void recursiveEndianSwap(int128_t &in) {
 		in = byteswap(in);
 	}
 	

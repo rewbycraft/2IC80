@@ -23,6 +23,13 @@ TEST(EndianTest, ByteSwapTest3) {
 	EXPECT_EQ(0x1, b);
 }
 
+TEST(EndianTest, ByteSwapTest4) {
+	uint128_t a = std::make_uint128(0x0809101112131415, 0x0001020304050607);
+	uint128_t b = parser::byteswap(a);
+	uint128_t c = std::make_uint128(0x0706050403020100, 0x1514131211100908);
+	EXPECT_EQ(c, b);
+}
+
 TEST(EndianTest, AutoEndianTest1) {
 	uint8_t a = 0x1;
 	parser::recursiveEndianSwap(a);
