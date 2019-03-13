@@ -11,6 +11,8 @@
 #include <cstring>
 #include <boost/fusion/include/algorithm.hpp>
 #include <type_traits>
+#include <utility>
+#include <climits>
 
 typedef __int128 int128_t;
 typedef unsigned __int128 uint128_t;
@@ -34,11 +36,35 @@ namespace parser {
 	}
 	
 	//Constexpr recursive function to byteswap an integer type.
-	template<typename T>
-	inline constexpr static T byteswap(T in, size_t n = 0) {
-		return (n < sizeof(T) / 2) ? ((((in >> n * 8) & 0xFF) << (sizeof(T) - n - 1) * 8) +
-		                              (((in >> (sizeof(T) - n - 1) * 8) & 0xFF) << n * 8) + byteswap(
-			in - (in & (0xFF << (sizeof(T) - n - 1) * 8)) - (in & (0xFF << n * 8)), n + 1)) : in;
+	//Based on https://stackoverflow.com/a/36937049
+	template<class T, std::size_t... N>
+	constexpr T byteswap_impl(T i, std::index_sequence<N...>) {
+		return ((((i >> N * CHAR_BIT) & (T) (unsigned char) (-1)) << ((sizeof(T) - 1 - N) * CHAR_BIT)) | ...);
+	};
+	
+	constexpr uint128_t byteswap(uint128_t i) {
+		const auto a = static_cast<const uint32_t>(i);
+		const auto b = static_cast<const uint64_t>(i >> 32);
+		const auto c = static_cast<const uint32_t>(i >> 96);
+		const auto sa = byteswap_impl<uint32_t>(a, std::make_index_sequence<sizeof(uint32_t)>{});
+		const auto sb = byteswap_impl<uint64_t>(b, std::make_index_sequence<sizeof(uint64_t)>{});
+		const auto sc = byteswap_impl<uint32_t>(c, std::make_index_sequence<sizeof(uint32_t)>{});
+		return ((uint128_t)sa << 96) | ((uint128_t)sb << 32) | sc;
+	}
+	
+	constexpr uint128_t byteswap(int128_t i) {
+		const auto a = static_cast<const uint32_t>(i);
+		const auto b = static_cast<const uint64_t>(i >> 32);
+		const auto c = static_cast<const uint32_t>(i >> 96);
+		const auto sa = byteswap_impl<uint32_t>(a, std::make_index_sequence<sizeof(uint32_t)>{});
+		const auto sb = byteswap_impl<uint64_t>(b, std::make_index_sequence<sizeof(uint64_t)>{});
+		const auto sc = byteswap_impl<uint32_t>(c, std::make_index_sequence<sizeof(uint32_t)>{});
+		return ((uint128_t)sa << 96) | ((uint128_t)sb << 32) | sc;
+	}
+	
+	template<class T, class U = typename std::make_unsigned<T>::type>
+	constexpr T byteswap(T i) {
+		return byteswap_impl<U>(i, std::make_index_sequence<sizeof(T)>{});
 	}
 	
 	//Byteswap: Case sequence (declaration)
