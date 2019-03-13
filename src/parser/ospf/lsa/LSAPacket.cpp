@@ -19,20 +19,28 @@ parser::LSAPacket::LSAPacket(const parser::bytevector &data) : Packet(data) {
 				subpacket = std::make_shared<parser::RouterLSAPacket>(remainder);
 				break;
 			case NETWORK_LSA:
+				throw parser::MalformedPacketException("Unimplemented LSA type.");
 				break;
 			case INTER_AREA_PREFIX_LSA:
+				throw parser::MalformedPacketException("Unimplemented LSA type.");
 				break;
 			case INTER_AREA_ROUTER_LSA:
+				throw parser::MalformedPacketException("Unimplemented LSA type.");
 				break;
 			case AS_EXTERNAL_LSA:
+				throw parser::MalformedPacketException("Unimplemented LSA type.");
 				break;
 			case GROUP_MEMBERSHIP_LSA:
+				throw parser::MalformedPacketException("Unimplemented LSA type.");
 				break;
 			case NSSA_LSA:
+				throw parser::MalformedPacketException("Unimplemented LSA type.");
 				break;
 			case LINK_LSA:
+				throw parser::MalformedPacketException("Unimplemented LSA type.");
 				break;
 			case INTRA_AREA_PREFIX_LSA:
+				throw parser::MalformedPacketException("Unimplemented LSA type.");
 				break;
 			default:
 				throw parser::MalformedPacketException("Invalid LSA type.");
