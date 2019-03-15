@@ -86,8 +86,8 @@ void parser::OSPFv3Packet::toString(const std::function<void(const std::string&)
 	printer("Router ID: " + Tins::IPv4Address(byteswap(header.router_id)).to_string());
 	printer("Area ID: " + Tins::IPv4Address(byteswap(header.area_id)).to_string());
 	printer("Checksum: " + util::to_hex_string(header.checksum));
-	printer("Instance ID: " + std::to_string(header.checksum));
-	printer("Reserved: " + util::to_hex_string(header.checksum));
+	printer("Instance ID: " + std::to_string(header.instance_id));
+	printer("Reserved: " + util::to_hex_string(header.reserved));
 	
 	if (subpacket) {
 		printer("Subpacket:");
