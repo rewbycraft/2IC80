@@ -41,14 +41,14 @@ set(Boost_USE_STATIC_RUNTIME ON)
 find_package(Boost REQUIRED COMPONENTS system)
 message(STATUS "Boost version: ${Boost_VERSION}")
 
-add_library(attack_lib STATIC src/pdus/OSPFv3.cpp src/pdus/OSPFv3.h src/parser/internal.h src/parser/internal.cpp src/parser/Packet.cpp src/parser/Packet.h src/parser/ospf/OSPFv3Packet.cpp src/parser/ospf/OSPFv3Packet.h src/parser/MalformedPacketException.cpp src/parser/MalformedPacketException.h src/parser/ospf/HelloPacket.cpp src/parser/ospf/HelloPacket.h src/parser/ospf/lsa/LSAPacket.cpp src/parser/ospf/lsa/LSAPacket.h src/parser/ospf/DatabaseDescriptionPacket.cpp src/parser/ospf/DatabaseDescriptionPacket.h src/parser/ospf/LinkStateRequestPacket.cpp src/parser/ospf/LinkStateRequestPacket.h src/parser/ospf/LinkStateUpdatePacket.cpp src/parser/ospf/LinkStateUpdatePacket.h src/parser/ospf/LinkStateAcknowledgementPacket.cpp src/parser/ospf/LinkStateAcknowledgementPacket.h src/parser/ospf/lsa/PrefixLSAPacket.cpp src/parser/ospf/lsa/PrefixLSAPacket.h src/parser/ospf/lsa/RouterLSAPacket.cpp src/parser/ospf/lsa/RouterLSAPacket.h src/parser/ospf/lsa/lsa_checksum.cpp src/parser/ospf/lsa/lsa_checksum.h src/parser/ospf/ospf_checksum.cpp src/parser/ospf/ospf_checksum.h)
+add_library(attack_lib STATIC src/main.cpp src/pdus/OSPFv3.cpp src/pdus/OSPFv3.h src/parser/internal.h src/parser/internal.cpp src/parser/Packet.cpp src/parser/Packet.h src/parser/ospf/OSPFv3Packet.cpp src/parser/ospf/OSPFv3Packet.h src/parser/MalformedPacketException.cpp src/parser/MalformedPacketException.h src/parser/ospf/HelloPacket.cpp src/parser/ospf/HelloPacket.h src/parser/ospf/lsa/LSAPacket.cpp src/parser/ospf/lsa/LSAPacket.h src/parser/ospf/DatabaseDescriptionPacket.cpp src/parser/ospf/DatabaseDescriptionPacket.h src/parser/ospf/LinkStateRequestPacket.cpp src/parser/ospf/LinkStateRequestPacket.h src/parser/ospf/LinkStateUpdatePacket.cpp src/parser/ospf/LinkStateUpdatePacket.h src/parser/ospf/LinkStateAcknowledgementPacket.cpp src/parser/ospf/LinkStateAcknowledgementPacket.h src/parser/ospf/lsa/PrefixLSAPacket.cpp src/parser/ospf/lsa/PrefixLSAPacket.h src/parser/ospf/lsa/RouterLSAPacket.cpp src/parser/ospf/lsa/RouterLSAPacket.h src/parser/ospf/lsa/lsa_checksum.cpp src/parser/ospf/lsa/lsa_checksum.h src/parser/ospf/ospf_checksum.cpp src/parser/ospf/ospf_checksum.h)
 target_compile_features(attack_lib PUBLIC cxx_std_17)
 set_target_properties(attack_lib PROPERTIES CXX_EXTENSIONS OFF)
 
 target_link_libraries(attack_lib tins Boost::system)
 target_include_directories(attack_lib PRIVATE ${PROJECT_SOURCE_DIR}/libtins/include ${PROJECT_SOURCE_DIR}/spdlog/include)
 
-add_executable(attack src/main.cpp)
+add_executable(attack src/wrappedmain.cpp)
 target_include_directories(attack PRIVATE ${PROJECT_SOURCE_DIR}/libtins/include ${PROJECT_SOURCE_DIR}/spdlog/include)
 target_link_libraries(attack attack_lib)
 

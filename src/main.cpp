@@ -31,7 +31,7 @@ bool processPacket(const PDU &pdu) {
 	return true;
 }
 
-int main(int argc, char* argv[])
+int attack_main(int argc, char* argv[])
 {
 	Allocators::register_allocator<IPv6, pdu::OSPFv3>(0x59);
 	FileSniffer sniffer("../pcaps/c2-d1-c1start.pcap");
