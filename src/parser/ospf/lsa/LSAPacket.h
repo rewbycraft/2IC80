@@ -17,7 +17,7 @@ public:
 		uint16_t age;
 		uint16_t _options;
 		uint32_t id;
-		BigEndian<uint32_t> advertising_router;
+		uint32_t advertising_router;
 		uint32_t seq;
 		uint16_t checksum;
 		uint16_t length;
@@ -52,9 +52,11 @@ private:
 		const std::shared_ptr<Packet> &getSubpacket() const;
 		
 		void setSubpacket(const std::shared_ptr<Packet> &subpacket);
+		
+		void toString(const std::function<void(const std::string &)> &printer) const override;
 	};
 }
 
-BOOST_FUSION_ADAPT_STRUCT(parser::LSAPacket::Header, (uint16_t,age), (uint16_t,_options), (uint32_t,id), (parser::BigEndian<uint32_t>, advertising_router), (uint32_t,seq), (uint16_t,checksum), (uint16_t,length))
+BOOST_FUSION_ADAPT_STRUCT(parser::LSAPacket::Header, (uint16_t,age), (uint16_t,_options), (uint32_t,id), (uint32_t, advertising_router), (uint32_t,seq), (uint16_t,checksum), (uint16_t,length))
 
 #endif //ATTACK_LSAPACKET_H

@@ -10,6 +10,7 @@
 #include "LinkStateRequestPacket.h"
 #include "LinkStateUpdatePacket.h"
 #include "LinkStateAcknowledgementPacket.h"
+#include "../../util.h"
 
 parser::OSPFv3Packet::OSPFv3Packet() : Packet() {
 
@@ -75,4 +76,21 @@ void parser::OSPFv3Packet::setSubpacket(const std::shared_ptr<parser::Packet> &s
 
 void parser::OSPFv3Packet::recomputeChecksum(const Tins::IPv6 &) {
 
+}
+
+void parser::OSPFv3Packet::toString(const std::function<void(const std::string&)>& printer) const {
+	printer("== OSPFv3 Header ==");
+	printer("Version: " + std::to_string(header.version));
+	printer("Type: " + std::to_string(header.type));
+	printer("Length: " + std::to_string(header.packet_length));
+	printer("Router ID: " + Tins::IPv4Address(byteswap(header.router_id)).to_string());
+	printer("Area ID: " + Tins::IPv4Address(byteswap(header.area_id)).to_string());
+	printer("Checksum: " + util::to_hex_string(header.checksum));
+	printer("Instance ID: " + std::to_string(header.checksum));
+	printer("Reserved: " + util::to_hex_string(header.checksum));
+	
+	if (subpacket) {
+		printer("Subpacket:");
+		subpacket->toString(util::prepend_printer(printer));
+	}
 }

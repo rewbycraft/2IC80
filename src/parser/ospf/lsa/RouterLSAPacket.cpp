@@ -2,8 +2,10 @@
 // Created by rewbycraft on 2/25/19.
 //
 
+#include <tins/ip_address.h>
 #include "RouterLSAPacket.h"
 #include "../../internal.h"
+#include "../../../util.h"
 
 parser::RouterLSAPacket::RouterLSAPacket() : Packet() {
 
@@ -45,4 +47,20 @@ parser::RouterLSAPacket::getInterfaces() const {
 void parser::RouterLSAPacket::setInterfaces(
 	const std::vector<parser::RouterLSAPacket::InterfaceHeader> &interfaces) {
 	RouterLSAPacket::interfaces = interfaces;
+}
+
+void parser::RouterLSAPacket::toString(const std::function<void(const std::string &)> &printer) const {
+	printer("== Router LSA Header ==");
+	printer("Options: " + util::to_bin_string(header.options));
+	printer("#interfaces: " + std::to_string(interfaces.size()));
+	int i = 0;
+	for (auto& interface : interfaces) {
+		printer("Interface #" + std::to_string(i++) + ":");
+		printer("| Type: " + std::to_string(interface.type));
+		printer("| Unused: " + util::to_hex_string(interface.unused));
+		printer("| Metric: " + std::to_string(interface.metric));
+		printer("| Interface ID: " + std::to_string(interface.interface_id));
+		printer("| Neighbor Interface ID: " + std::to_string(interface.neighbor_interface_id));
+		printer("| Neighbor Router ID: " + Tins::IPv4Address(byteswap(interface.neighbor_router_id)).to_string());
+	}
 }

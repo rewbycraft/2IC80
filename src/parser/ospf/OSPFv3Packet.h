@@ -48,6 +48,8 @@ namespace parser {
 		
 		void recomputeChecksum(const Tins::IPv6& v6Header);
 		
+		void toString(const std::function<void(const std::string&)>&) const override;
+		
 	};
 }
 

@@ -4,6 +4,7 @@
 
 #include "LinkStateUpdatePacket.h"
 #include "../internal.h"
+#include "../../util.h"
 
 parser::LinkStateUpdatePacket::LinkStateUpdatePacket() : Packet() {
 
@@ -42,4 +43,14 @@ const std::vector<std::shared_ptr<parser::LSAPacket>> &parser::LinkStateUpdatePa
 
 void parser::LinkStateUpdatePacket::setLsas(const std::vector<std::shared_ptr<parser::LSAPacket>> &lsas) {
 	LinkStateUpdatePacket::lsas = lsas;
+}
+
+void parser::LinkStateUpdatePacket::toString(const std::function<void(const std::string &)> &printer) const {
+	printer("== Link State Update Header ==");
+	printer("#LSAs: " + std::to_string(lsas.size()));
+	int i = 0;
+	for (auto& lsa : lsas) {
+		printer("LSA " + std::to_string(i++) + ":");
+		lsa->toString(util::prepend_printer(printer));
+	}
 }

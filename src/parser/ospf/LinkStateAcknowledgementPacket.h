@@ -20,6 +20,8 @@ namespace parser {
 		const std::vector<std::shared_ptr<LSAPacket>> &getLsas() const;
 		
 		void setLsas(const std::vector<std::shared_ptr<LSAPacket>> &lsas);
+		
+		void toString(const std::function<void(const std::string &)> &printer) const override;
 	};
 }
 

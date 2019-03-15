@@ -37,6 +37,8 @@ namespace parser {
 		const Header &getHeader() const;
 		
 		void setHeader(const Header &header);
+		
+		void toString(const std::function<void(const std::string &)> &printer) const override;
 	};
 }
 

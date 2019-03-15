@@ -5,6 +5,7 @@
 #include <boost/shared_ptr.hpp>
 #include "DatabaseDescriptionPacket.h"
 #include "../internal.h"
+#include "../../util.h"
 
 parser::DatabaseDescriptionPacket::DatabaseDescriptionPacket() : Packet() {
 
@@ -44,4 +45,18 @@ const std::vector<std::shared_ptr<parser::LSAPacket>> &parser::DatabaseDescripti
 
 void parser::DatabaseDescriptionPacket::setLsas(const std::vector<std::shared_ptr<parser::LSAPacket>> &lsas) {
 	DatabaseDescriptionPacket::lsas = lsas;
+}
+
+void parser::DatabaseDescriptionPacket::toString(const std::function<void(const std::string &)> &printer) const {
+	printer("== Database Description Packet ==");
+	printer("Options: " + util::to_bin_string(header.options));
+	printer("Interface MTU: " + std::to_string(header.interface_mtu));
+	printer("Database Options: " + util::to_bin_string(header.database_options));
+	printer("Database Description SEQ: " + std::to_string(header.dd_seq));
+	printer("#LSAs: " + std::to_string(lsas.size()));
+	int i = 0;
+	for (auto& lsa : lsas) {
+		printer("LSA " + std::to_string(i++) + ":");
+		lsa->toString(util::prepend_printer(printer));
+	}
 }

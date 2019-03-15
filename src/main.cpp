@@ -11,17 +11,8 @@ bool processPacket(const PDU &pdu) {
 	const IPv6 &ip = pdu.rfind_pdu<IPv6>();
 	const auto &ospf = ip.rfind_pdu<pdu::OSPFv3>();
 	std::cout << "IP: " << ip.src_addr() << " -> " << ip.dst_addr() << std::endl;
-	std::cout << "OSPF: version=" << int(ospf.getPacket().getHeader().version) << " router_id=" << Tins::IPv4Address(ospf.getPacket().getHeader().router_id) << std::endl;
-	if (ospf.getPacket().getHeader().type == parser::OSPFv3Packet::HELLO)
-		std::cout << "OSPF Hello: neighbors=" << std::dynamic_pointer_cast<parser::HelloPacket>(ospf.getPacket().getSubpacket())->getNeighbors().size() << std::endl;
-	if (ospf.getPacket().getHeader().type == parser::OSPFv3Packet::LINK_STATE_UPDATE) {
-		auto lsu = std::dynamic_pointer_cast<parser::LinkStateUpdatePacket>(ospf.getPacket().getSubpacket());
-		std::cout << "OSPF link state update: lsas=" << lsu->getLsas().size() << std::endl;
-	}
-	if (ospf.getPacket().getHeader().type == parser::OSPFv3Packet::LINK_STATE_ACK) {
-		auto lsack = std::dynamic_pointer_cast<parser::LinkStateAcknowledgementPacket>(ospf.getPacket().getSubpacket());
-		std::cout << "OSPF link state acknowledgement: lsas=" << lsack->getLsas().size() << std::endl;
-	}
+	
+	std::cout << ospf.getPacket().Packet::toString() << std::endl;
 	
 	std::cout << "Re-encoded packet: " << std::hex;
 	for (auto& i : ospf.getPacket().serialize())

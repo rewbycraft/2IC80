@@ -2,9 +2,11 @@
 // Created by rewbycraft on 2/25/19.
 //
 
+#include <tins/ip_address.h>
 #include "HelloPacket.h"
 #include "../internal.h"
 #include "../MalformedPacketException.h"
+#include "../../util.h"
 
 parser::HelloPacket::HelloPacket() : Packet() {
 
@@ -50,4 +52,19 @@ const parser::HelloPacket::Header &parser::HelloPacket::getHeader() const {
 
 void parser::HelloPacket::setHeader(const parser::HelloPacket::Header &header) {
 	HelloPacket::header = header;
+}
+
+void parser::HelloPacket::toString(const std::function<void(const std::string &)> &printer) const {
+	printer("== Hello Header ==");
+	printer("Interface ID: " + std::to_string(header.interface_id));
+	printer("Options: " + util::to_bin_string(header.options));
+	printer("Hello Interval: " + std::to_string(header.hello_interval));
+	printer("Router Dead Interval: " + std::to_string(header.hello_interval));
+	printer("Designated Router ID: " + Tins::IPv4Address(byteswap(header.designated_router_id)).to_string());
+	printer("Backup Designated Router ID: " + Tins::IPv4Address(byteswap(header.backup_designated_router_id)).to_string());
+	printer("#Neighbors: " + std::to_string(neighbors.size()));
+	int i = 0;
+	for (auto& neighbor : neighbors) {
+		printer("Neighbor " + std::to_string(i++) + ": " + Tins::IPv4Address(byteswap(neighbor)).to_string());
+	}
 }

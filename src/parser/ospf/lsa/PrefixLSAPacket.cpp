@@ -5,6 +5,8 @@
 #include "PrefixLSAPacket.h"
 #include "../../internal.h"
 #include <cmath>
+#include <tins/ipv6_address.h>
+#include "../../../util.h"
 
 parser::PrefixLSAPacket::PrefixLSAPacket() : Packet() {
 
@@ -34,6 +36,14 @@ const parser::PrefixLSAPacket::Header &parser::PrefixLSAPacket::getHeader() cons
 
 void parser::PrefixLSAPacket::setHeader(const parser::PrefixLSAPacket::Header &header) {
 	PrefixLSAPacket::header = header;
+}
+
+void parser::PrefixLSAPacket::toString(const std::function<void(const std::string &)> &printer) const {
+	printer("== Prefix Header ==");
+	printer("Length: " + std::to_string(header.length));
+	printer("Options: " + util::to_bin_string(header.options));
+	printer("Special: " + util::to_bin_string(header.special));
+	printer("Address: " + util::to_hex_string(header.address));
 }
 
 std::pair<std::shared_ptr<parser::PrefixLSAPacket>, const parser::bytevector> extractPrefix(const parser::bytevector& input) {

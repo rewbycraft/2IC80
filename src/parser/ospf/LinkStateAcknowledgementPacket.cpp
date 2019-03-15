@@ -4,6 +4,7 @@
 
 #include "LinkStateAcknowledgementPacket.h"
 #include "../MalformedPacketException.h"
+#include "../../util.h"
 
 parser::LinkStateAcknowledgementPacket::LinkStateAcknowledgementPacket() : Packet() {
 
@@ -41,4 +42,14 @@ const std::vector<std::shared_ptr<parser::LSAPacket>> &parser::LinkStateAcknowle
 
 void parser::LinkStateAcknowledgementPacket::setLsas(const std::vector<std::shared_ptr<parser::LSAPacket>> &lsas) {
 	LinkStateAcknowledgementPacket::lsas = lsas;
+}
+
+void parser::LinkStateAcknowledgementPacket::toString(const std::function<void(const std::string &)> &printer) const {
+	printer("== Link State Acknowledgement Header ==");
+	printer("#LSAs: " + std::to_string(lsas.size()));
+	int i = 0;
+	for (auto& lsa : lsas) {
+		printer("LSA " + std::to_string(i++) + ":");
+		lsa->toString(util::prepend_printer(printer));
+	}
 }

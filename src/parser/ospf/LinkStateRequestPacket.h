@@ -29,6 +29,8 @@ namespace parser {
 		const std::vector<RequestedLSA> &getRequestedLsas() const;
 		
 		void setRequestedLsas(const std::vector<RequestedLSA> &requestedLsas);
+		
+		void toString(const std::function<void(const std::string &)> &printer) const override;
 	};
 }
 

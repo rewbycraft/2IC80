@@ -8,6 +8,8 @@
 #include <vector>
 #include <cstdint>
 #include "internal.h"
+#include <functional>
+#include <string>
 
 namespace parser {
 	class Packet {
@@ -20,6 +22,10 @@ namespace parser {
 		virtual ~Packet();
 		
 		virtual const bytevector serialize() const = 0;
+		
+		virtual void toString(const std::function<void(const std::string&)>& printer) const = 0;
+		
+		virtual const std::string toString() const;
 	};
 	
 }

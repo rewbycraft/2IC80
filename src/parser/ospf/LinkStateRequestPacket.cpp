@@ -2,8 +2,10 @@
 // Created by rewbycraft on 2/25/19.
 //
 
+#include <tins/ip_address.h>
 #include "LinkStateRequestPacket.h"
 #include "../internal.h"
+#include "../../util.h"
 
 parser::LinkStateRequestPacket::LinkStateRequestPacket() : Packet() {
 
@@ -33,4 +35,17 @@ parser::LinkStateRequestPacket::getRequestedLsas() const {
 void parser::LinkStateRequestPacket::setRequestedLsas(
 	const std::vector<parser::LinkStateRequestPacket::RequestedLSA> &requestedLsas) {
 	LinkStateRequestPacket::requestedLsas = requestedLsas;
+}
+
+void parser::LinkStateRequestPacket::toString(const std::function<void(const std::string &)> &printer) const {
+	printer("== Link State Request Header ==");
+	printer("#LSAs: " + std::to_string(requestedLsas.size()));
+	int i = 0;
+	for (auto& lsa : requestedLsas) {
+		printer("LSA " + std::to_string(i++) + ":");
+		printer("| Empty: " + util::to_hex_string(lsa.empty));
+		printer("| Options: " + util::to_bin_string(lsa.options));
+		printer("| ID: " + util::to_hex_string(lsa.id));
+		printer("| Advertising Router: " + Tins::IPv4Address(byteswap(lsa.advertising_router)).to_string());
+	}
 }
