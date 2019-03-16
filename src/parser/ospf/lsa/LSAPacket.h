@@ -18,7 +18,7 @@ public:
 		uint16_t _options;
 		uint32_t id;
 		uint32_t advertising_router;
-		uint32_t seq;
+		int32_t seq;
 		uint16_t checksum;
 		uint16_t length;
 		
@@ -57,6 +57,6 @@ private:
 	};
 }
 
-BOOST_FUSION_ADAPT_STRUCT(parser::LSAPacket::Header, (uint16_t,age), (uint16_t,_options), (uint32_t,id), (uint32_t, advertising_router), (uint32_t,seq), (uint16_t,checksum), (uint16_t,length))
+BOOST_FUSION_ADAPT_STRUCT(parser::LSAPacket::Header, (uint16_t,age), (uint16_t,_options), (uint32_t,id), (uint32_t, advertising_router), (int32_t,seq), (uint16_t,checksum), (uint16_t,length))
 
 #endif //ATTACK_LSAPACKET_H

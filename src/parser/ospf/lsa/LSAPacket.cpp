@@ -15,37 +15,47 @@ parser::LSAPacket::LSAPacket() : Packet() {
 parser::LSAPacket::LSAPacket(const parser::bytevector &data) : Packet(data) {
 	const parser::bytevector remainder = parser::deserializeObject(header, data);
 	
+	if (sizeof(Header) > header.length) {
+		throw parser::MalformedPacketException("Nonsensical LSA length field.");
+	}
+	
+	//Is there a payload?
 	if (!remainder.empty()) {
-		switch (header.getFunction()) {
+		//Erase all data that is not part of the payload. (Since this may be followed by more LSAs.)
+		const size_t l = header.length - sizeof(Header);
+		const parser::bytevector payload(remainder.begin(), remainder.begin() + l);
+
+		uint16_t function = header.getFunction();
+		switch (function) {
 			case ROUTER_LSA:
-				subpacket = std::make_shared<parser::RouterLSAPacket>(remainder);
+				subpacket = std::make_shared<parser::RouterLSAPacket>(payload);
 				break;
 			case NETWORK_LSA:
-				throw parser::MalformedPacketException("Unimplemented LSA type.");
+				throw parser::MalformedPacketException("Unimplemented LSA type: " + std::to_string(function));
 				break;
 			case INTER_AREA_PREFIX_LSA:
-				throw parser::MalformedPacketException("Unimplemented LSA type.");
+				throw parser::MalformedPacketException("Unimplemented LSA type: " + std::to_string(function));
 				break;
 			case INTER_AREA_ROUTER_LSA:
-				throw parser::MalformedPacketException("Unimplemented LSA type.");
+				throw parser::MalformedPacketException("Unimplemented LSA type: " + std::to_string(function));
 				break;
 			case AS_EXTERNAL_LSA:
-				throw parser::MalformedPacketException("Unimplemented LSA type.");
+				throw parser::MalformedPacketException("Unimplemented LSA type: " + std::to_string(function));
 				break;
 			case GROUP_MEMBERSHIP_LSA:
-				throw parser::MalformedPacketException("Unimplemented LSA type.");
+				throw parser::MalformedPacketException("Unimplemented LSA type: " + std::to_string(function));
 				break;
 			case NSSA_LSA:
-				throw parser::MalformedPacketException("Unimplemented LSA type.");
+				throw parser::MalformedPacketException("Unimplemented LSA type: " + std::to_string(function));
 				break;
 			case LINK_LSA:
-				throw parser::MalformedPacketException("Unimplemented LSA type.");
+				throw parser::MalformedPacketException("Unimplemented LSA type: " + std::to_string(function));
 				break;
 			case INTRA_AREA_PREFIX_LSA:
-				throw parser::MalformedPacketException("Unimplemented LSA type.");
+				throw parser::MalformedPacketException("Unimplemented LSA type: " + std::to_string(function));
 				break;
 			default:
-				throw parser::MalformedPacketException("Invalid LSA type.");
+				throw parser::MalformedPacketException("Invalid LSA type: " + std::to_string(function));
 		}
 	} else {
 		subpacket = nullptr;

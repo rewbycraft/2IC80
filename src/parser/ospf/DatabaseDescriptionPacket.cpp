@@ -4,7 +4,6 @@
 
 #include <boost/shared_ptr.hpp>
 #include "DatabaseDescriptionPacket.h"
-#include "../internal.h"
 #include "../../util.h"
 
 parser::DatabaseDescriptionPacket::DatabaseDescriptionPacket() : Packet() {
@@ -13,10 +12,10 @@ parser::DatabaseDescriptionPacket::DatabaseDescriptionPacket() : Packet() {
 
 parser::DatabaseDescriptionPacket::DatabaseDescriptionPacket(const parser::bytevector &data) : Packet(data) {
 	auto remainder = parser::deserializeObject(header, data);
-	unsigned long i = 0;
-	while (remainder.size()-i > 0) {
-		std::shared_ptr<LSAPacket> p = std::make_shared<LSAPacket>(parser::bytevector(remainder.begin()+i, remainder.end()));
-		i += p->serialize().size();
+	while (!remainder.empty()) {
+		std::shared_ptr<LSAPacket> p = std::make_shared<LSAPacket>(
+			parser::bytevector(remainder.begin(), remainder.begin() + sizeof(parser::LSAPacket::Header)));
+		remainder = parser::bytevector(remainder.begin() + sizeof(parser::LSAPacket::Header), remainder.end());
 		lsas.push_back(p);
 	}
 }
@@ -24,7 +23,7 @@ parser::DatabaseDescriptionPacket::DatabaseDescriptionPacket(const parser::bytev
 const parser::bytevector parser::DatabaseDescriptionPacket::serialize() const {
 	parser::bytevector result;
 	serializeObject(result, header);
-	for (auto& lsa : lsas) {
+	for (auto &lsa : lsas) {
 		auto serializedLsa = lsa->serialize();
 		result.insert(result.end(), serializedLsa.begin(), serializedLsa.end());
 	}
@@ -55,7 +54,7 @@ void parser::DatabaseDescriptionPacket::toString(const std::function<void(const 
 	printer("Database Description SEQ: " + std::to_string(header.dd_seq));
 	printer("#LSAs: " + std::to_string(lsas.size()));
 	int i = 0;
-	for (auto& lsa : lsas) {
+	for (auto &lsa : lsas) {
 		printer("LSA " + std::to_string(i++) + ":");
 		lsa->toString(util::prepend_printer(printer));
 	}
