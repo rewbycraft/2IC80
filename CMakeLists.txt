@@ -52,6 +52,11 @@ add_executable(attack src/wrappedmain.cpp)
 target_include_directories(attack PRIVATE ${PROJECT_SOURCE_DIR}/libtins/include ${PROJECT_SOURCE_DIR}/spdlog/include)
 target_link_libraries(attack attack_lib)
 
+add_executable(pcapdump tools/pcapdump.cpp)
+target_include_directories(pcapdump PRIVATE ${PROJECT_SOURCE_DIR}/libtins/include ${PROJECT_SOURCE_DIR}/spdlog/include)
+target_link_libraries(pcapdump attack_lib)
+
+
 option(PACKAGE_TESTS "Build the tests" ON)
 if(PACKAGE_TESTS)
     enable_testing()
