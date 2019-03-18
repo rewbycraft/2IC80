@@ -59,7 +59,7 @@ void parser::HelloPacket::toString(const std::function<void(const std::string &)
 	printer("Interface ID: " + std::to_string(header.interface_id));
 	printer("Options: " + util::to_bin_string(header.options));
 	printer("Hello Interval: " + std::to_string(header.hello_interval));
-	printer("Router Dead Interval: " + std::to_string(header.hello_interval));
+	printer("Router Dead Interval: " + std::to_string(header.router_dead_interval));
 	printer("Designated Router ID: " + Tins::IPv4Address(byteswap(header.designated_router_id)).to_string());
 	printer("Backup Designated Router ID: " + Tins::IPv4Address(byteswap(header.backup_designated_router_id)).to_string());
 	printer("#Neighbors: " + std::to_string(neighbors.size()));
