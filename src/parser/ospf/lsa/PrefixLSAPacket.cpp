@@ -3,7 +3,6 @@
 //
 
 #include "PrefixLSAPacket.h"
-#include "../../internal.h"
 #include <cmath>
 #include <tins/ipv6_address.h>
 #include "../../../util.h"
@@ -13,7 +12,7 @@ parser::PrefixLSAPacket::PrefixLSAPacket() : Packet() {
 }
 
 parser::PrefixLSAPacket::PrefixLSAPacket(const parser::bytevector &data) : Packet(data) {
-	deserializeObject(header, data);
+	parser::deserializeObject(header, data);
 	
 	//Now we get rid of the irrelevant bits from the ip.
 	header.address &= (~generateMask<uint128_t>(128UL - header.length));
@@ -25,9 +24,19 @@ const parser::bytevector parser::PrefixLSAPacket::serialize() const {
 	copyHeader.address &= (~generateMask<uint128_t>(128UL - copyHeader.length));
 	
 	parser::bytevector raw;
-	serializeObject(raw, copyHeader);
+	parser::serializeObject(raw, copyHeader);
 	
-	return parser::bytevector(raw.begin(), raw.begin()+4+int(std::max(std::ceil((float)copyHeader.length/32.0),1.0))*4);
+	size_t i = 0;
+	if (copyHeader.length > 0)
+		i += 4;
+	if (copyHeader.length > 32)
+		i += 4;
+	if (copyHeader.length > 64)
+		i += 4;
+	if (copyHeader.length > 96)
+		i += 4;
+	
+	return parser::bytevector(raw.begin(), raw.begin() + 4 + i);
 }
 
 const parser::PrefixLSAPacket::Header &parser::PrefixLSAPacket::getHeader() const {
@@ -46,7 +55,8 @@ void parser::PrefixLSAPacket::toString(const std::function<void(const std::strin
 	printer("Address: " + util::to_hex_string(header.address));
 }
 
-std::pair<std::shared_ptr<parser::PrefixLSAPacket>, const parser::bytevector> extractPrefix(const parser::bytevector& input) {
+std::pair<std::shared_ptr<parser::PrefixLSAPacket>, const parser::bytevector>
+extractPrefix(const parser::bytevector &input) {
 	std::shared_ptr<parser::PrefixLSAPacket> packet = std::make_shared<parser::PrefixLSAPacket>(input);
 	return {packet, parser::bytevector(input.begin() + packet->serialize().size(), input.end())};
 }

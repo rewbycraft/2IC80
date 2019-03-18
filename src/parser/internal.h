@@ -78,29 +78,41 @@ namespace parser {
 	//Byteswap: Case BigEndian/no-op
 	template<typename T>
 	void inline static recursiveEndianSwap(BigEndian<T> &in) {}
-	
-	struct __byteswap {
-		template<typename T>
-		void
-		operator()(T &x) const {
-			recursiveEndianSwap(x);
-		};
-	};
-	
+
 	template<typename T>
 	typename std::enable_if<boost::fusion::traits::is_sequence<T>{}, void>::type
 	inline static recursiveEndianSwap(T &in) {
-		boost::fusion::for_each(in, __byteswap());
+		boost::fusion::for_each(in, [&](auto& x) {
+			recursiveEndianSwap(x);
+		});
 	}
 	
 	template<typename T>
-	const parser::bytevector
-	deserializeObject(T &target, const parser::bytevector &source, const bool &autoEndian = true) {
+	typename std::enable_if<!boost::fusion::traits::is_sequence<T>{}, void>::type
+	inline static _deserializeObject(T& target, parser::bytevector &source) {
 		if (source.size() < sizeof(T))
 			throw parser::MalformedPacketException("Packet too small.");
 		
 		memset((std::uint8_t *) (&target), 0, sizeof(T));
 		memcpy((std::uint8_t *) (&target), source.data(), sizeof(T));
+		source.erase(source.begin(), source.begin() + sizeof(T));
+	}
+	
+	template<typename T>
+	typename std::enable_if<boost::fusion::traits::is_sequence<T>{}, void>::type
+	inline static _deserializeObject(T& target, parser::bytevector &source) {
+		boost::fusion::for_each(target, [&](auto& x) {
+			_deserializeObject(x, source);
+		});
+	}
+	
+	
+	template<typename T>
+	const parser::bytevector
+	deserializeObject(T &target, const parser::bytevector &source, const bool &autoEndian = true) {
+		parser::bytevector copy = source;
+		
+		_deserializeObject(target, copy);
 		
 		if (autoEndian) {
 			if (__BYTE_ORDER__ != __ORDER_BIG_ENDIAN__) {
@@ -108,8 +120,23 @@ namespace parser {
 			}
 		}
 		
-		return parser::bytevector(source.begin() + sizeof(T), source.end());
+		return copy;
 	}
+	
+	template<typename T>
+	typename std::enable_if<!boost::fusion::traits::is_sequence<T>{}, void>::type
+	inline static _serializeObject(parser::bytevector &target, const T& source) {
+		target.insert(target.end(), (const uint8_t *) &source, ((const uint8_t *) &source) + sizeof(T));
+	}
+	
+	template<typename T>
+	typename std::enable_if<boost::fusion::traits::is_sequence<T>{}, void>::type
+	inline static _serializeObject(parser::bytevector &target, const T& source) {
+		boost::fusion::for_each(source, [&](auto& x) {
+			_serializeObject(target, x);
+		});
+	}
+	
 	
 	template<typename T>
 	void serializeObject(parser::bytevector &target, const T &source, const bool &autoEndian = true) {
@@ -122,7 +149,7 @@ namespace parser {
 			}
 		}
 		
-		target.insert(target.end(), (const uint8_t *) &sourceCopy, ((const uint8_t *) &sourceCopy) + sizeof(T));
+		_serializeObject(target, sourceCopy);
 	}
 }
 

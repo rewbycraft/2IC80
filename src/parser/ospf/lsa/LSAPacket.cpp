@@ -7,6 +7,7 @@
 #include "../../internal.h"
 #include "RouterLSAPacket.h"
 #include "../../../util.h"
+#include "IntraAreaPrefixLSAPacket.h"
 
 parser::LSAPacket::LSAPacket() : Packet() {
 
@@ -52,7 +53,7 @@ parser::LSAPacket::LSAPacket(const parser::bytevector &data) : Packet(data) {
 				throw parser::MalformedPacketException("Unimplemented LSA type: " + std::to_string(function));
 				break;
 			case INTRA_AREA_PREFIX_LSA:
-				throw parser::MalformedPacketException("Unimplemented LSA type: " + std::to_string(function));
+				subpacket = std::make_shared<parser::IntraAreaPrefixLSAPacket>(payload);
 				break;
 			default:
 				throw parser::MalformedPacketException("Invalid LSA type: " + std::to_string(function));
