@@ -12,7 +12,11 @@ parser::PrefixLSAPacket::PrefixLSAPacket() : Packet() {
 }
 
 parser::PrefixLSAPacket::PrefixLSAPacket(const parser::bytevector &data) : Packet(data) {
-	parser::deserializeObject(header, data);
+	parser::bytevector copy = data;
+	while (copy.size() < 20) {
+		copy.push_back(0);
+	}
+	parser::deserializeObject(header, copy);
 	
 	//Now we get rid of the irrelevant bits from the ip.
 	header.address &= (~generateMask<uint128_t>(128UL - header.length));

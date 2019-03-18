@@ -9,6 +9,7 @@
 #include "../../../util.h"
 #include "IntraAreaPrefixLSAPacket.h"
 #include "LinkLSAPacket.h"
+#include "ASExternalLSAPacket.h"
 
 parser::LSAPacket::LSAPacket() : Packet() {
 
@@ -42,7 +43,7 @@ parser::LSAPacket::LSAPacket(const parser::bytevector &data) : Packet(data) {
 				throw parser::MalformedPacketException("Unimplemented LSA type: " + std::to_string(function));
 				break;
 			case AS_EXTERNAL_LSA:
-				throw parser::MalformedPacketException("Unimplemented LSA type: " + std::to_string(function));
+				subpacket = std::make_shared<parser::ASExternalLSAPacket>(payload);
 				break;
 			case GROUP_MEMBERSHIP_LSA:
 				throw parser::MalformedPacketException("Unimplemented LSA type: " + std::to_string(function));
