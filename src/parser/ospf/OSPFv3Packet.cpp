@@ -99,5 +99,6 @@ void parser::OSPFv3Packet::updateValues() {
 	header.packet_length = 16;
 	if (subpacket) {
 		header.packet_length += subpacket->serialize().size();
+		subpacket->updateValues();
 	}
 }

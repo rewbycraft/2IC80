@@ -12,6 +12,8 @@ bool processPacket(const PDU &pdu) {
 	const auto &ospf = ip.rfind_pdu<pdu::OSPFv3>();
 	std::cout << "IP: " << ip.src_addr() << " -> " << ip.dst_addr() << std::endl;
 	
+	auto v = ospf.getPacket();
+	v.updateValues();
 	std::cout << ospf.getPacket().Packet::toString() << std::endl;
 	
 	std::cout << "Re-encoded packet: " << std::hex;

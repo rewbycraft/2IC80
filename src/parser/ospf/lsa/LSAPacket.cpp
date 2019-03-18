@@ -10,6 +10,7 @@
 #include "IntraAreaPrefixLSAPacket.h"
 #include "LinkLSAPacket.h"
 #include "ASExternalLSAPacket.h"
+#include "lsa_checksum.h"
 
 parser::LSAPacket::LSAPacket() : Packet() {
 
@@ -111,5 +112,9 @@ void parser::LSAPacket::updateValues() {
 	header.length = 20;
 	if (subpacket) {
 		header.length += subpacket->serialize().size();
+		subpacket->updateValues();
 	}
+	
+	header.checksum = 0;
+	header.checksum = parser::checksum::lsa::calcChecksum(this->serialize());
 }

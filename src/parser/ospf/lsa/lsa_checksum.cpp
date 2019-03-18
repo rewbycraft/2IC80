@@ -36,7 +36,7 @@ std::pair<std::uint8_t, std::uint8_t> calcLSAChecksumPart(const parser::bytevect
 }
 
 
-std::optional<std::vector<std::pair<std::uint8_t, std::size_t>>> parser::modifyChecksum(
+std::optional<std::vector<std::pair<std::uint8_t, std::size_t>>> parser::checksum::lsa::modifyChecksum(
 		const parser::bytevector& data, const std::vector<std::size_t>& targetIndices,
 		const std::uint16_t& targetChecksum)
 {
@@ -78,7 +78,7 @@ std::optional<std::vector<std::pair<std::uint8_t, std::size_t>>> parser::modifyC
 	return { targets };
 }
 
-std::uint16_t parser::calcLSAChecksum(const parser::bytevector& data)
+std::uint16_t parser::checksum::lsa::calcChecksum(const parser::bytevector& data)
 {
 	std::pair<std::uint8_t, std::uint8_t> res = calcLSAChecksumPart(data, false);
 	uint8_t x = -res.second + (data.size() - 17) * res.first;
@@ -87,7 +87,7 @@ std::uint16_t parser::calcLSAChecksum(const parser::bytevector& data)
 	return (((std::uint16_t) x) << 8) | y;
 }
 
-bool parser::verifyLSAChecksum(const parser::bytevector& data)
+bool parser::checksum::lsa::verifyChecksum(const parser::bytevector& data)
 {
 	std::pair<std::uint8_t, std::uint8_t> res = calcLSAChecksumPart(data, true);
 	return (res.first == 0) && (res.second == 0);
