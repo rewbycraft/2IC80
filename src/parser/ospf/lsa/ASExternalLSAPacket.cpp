@@ -3,6 +3,7 @@
 //
 
 #include "ASExternalLSAPacket.h"
+#include "../../../util.h"
 
 parser::ASExternalLSAPacket::ASExternalLSAPacket() : Packet() {
 
@@ -51,6 +52,12 @@ const parser::bytevector parser::ASExternalLSAPacket::serialize() const {
 }
 
 void parser::ASExternalLSAPacket::toString(const std::function<void(const std::string &)> &printer) const {
+	printer("== AS External LSA Header ==");
+	printer("Options: " + util::to_bin_string(header._options));
+	printer("External route tag: " + util::to_hex_string(header.external_route_tag));
+	printer("Referenced LS id: " + std::to_string(header.referenced_link_state_id));
+	printer("Prefix:");
+	prefix->toString(util::prepend_printer(printer));
 
 }
 
