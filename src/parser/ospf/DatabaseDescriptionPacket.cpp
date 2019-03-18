@@ -59,3 +59,7 @@ void parser::DatabaseDescriptionPacket::toString(const std::function<void(const 
 		lsa->toString(util::prepend_printer(printer));
 	}
 }
+
+void parser::DatabaseDescriptionPacket::updateValues() {
+
+}

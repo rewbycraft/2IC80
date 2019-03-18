@@ -53,3 +53,7 @@ void parser::LinkStateAcknowledgementPacket::toString(const std::function<void(c
 		lsa->toString(util::prepend_printer(printer));
 	}
 }
+
+void parser::LinkStateAcknowledgementPacket::updateValues() {
+
+}

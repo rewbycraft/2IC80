@@ -54,3 +54,9 @@ void parser::LinkStateUpdatePacket::toString(const std::function<void(const std:
 		lsa->toString(util::prepend_printer(printer));
 	}
 }
+
+void parser::LinkStateUpdatePacket::updateValues() {
+	for (auto& lsa : lsas) {
+		lsa->updateValues();
+	}
+}

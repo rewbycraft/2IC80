@@ -49,3 +49,7 @@ void parser::LinkStateRequestPacket::toString(const std::function<void(const std
 		printer("| Advertising Router: " + Tins::IPv4Address(byteswap(lsa.advertising_router)).to_string());
 	}
 }
+
+void parser::LinkStateRequestPacket::updateValues() {
+
+}

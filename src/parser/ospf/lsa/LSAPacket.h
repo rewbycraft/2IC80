@@ -54,6 +54,8 @@ private:
 		void setSubpacket(const std::shared_ptr<Packet> &subpacket);
 		
 		void toString(const std::function<void(const std::string &)> &printer) const override;
+		
+		void updateValues() override;
 	};
 }
 

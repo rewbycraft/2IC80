@@ -76,3 +76,7 @@ const std::shared_ptr<parser::PrefixLSAPacket> &parser::ASExternalLSAPacket::get
 void parser::ASExternalLSAPacket::setPrefix(const std::shared_ptr<parser::PrefixLSAPacket> &prefix) {
 	ASExternalLSAPacket::prefix = prefix;
 }
+
+void parser::ASExternalLSAPacket::updateValues() {
+	prefix->updateValues();
+}

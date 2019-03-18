@@ -106,3 +106,10 @@ void parser::LSAPacket::toString(const std::function<void(const std::string &)> 
 		subpacket->toString(util::prepend_printer(printer));
 	}
 }
+
+void parser::LSAPacket::updateValues() {
+	header.length = 20;
+	if (subpacket) {
+		header.length += subpacket->serialize().size();
+	}
+}

@@ -68,3 +68,7 @@ void parser::HelloPacket::toString(const std::function<void(const std::string &)
 		printer("Neighbor " + std::to_string(i++) + ": " + Tins::IPv4Address(byteswap(neighbor)).to_string());
 	}
 }
+
+void parser::HelloPacket::updateValues() {
+
+}

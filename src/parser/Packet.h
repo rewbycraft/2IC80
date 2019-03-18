@@ -26,6 +26,8 @@ namespace parser {
 		virtual void toString(const std::function<void(const std::string&)>& printer) const = 0;
 		
 		virtual const std::string toString() const;
+		
+		virtual void updateValues() = 0;
 	};
 	
 }

@@ -40,6 +40,8 @@ namespace parser {
 		void setInterfaces(const std::vector<InterfaceHeader> &interfaces);
 		
 		void toString(const std::function<void(const std::string &)> &printer) const override;
+		
+		void updateValues() override;
 	};
 }
 

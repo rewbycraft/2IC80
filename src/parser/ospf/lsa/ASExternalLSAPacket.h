@@ -36,6 +36,8 @@ namespace parser {
 		const std::shared_ptr<PrefixLSAPacket> &getPrefix() const;
 		
 		void setPrefix(const std::shared_ptr<PrefixLSAPacket> &prefix);
+		
+		void updateValues() override;
 	};
 }
 

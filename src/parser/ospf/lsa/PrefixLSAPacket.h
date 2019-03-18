@@ -30,6 +30,8 @@ namespace parser {
 		void setHeader(const Header &header);
 		
 		void toString(const std::function<void(const std::string &)> &printer) const override;
+		
+		void updateValues() override;
 	};
 	
 	std::pair<std::shared_ptr<PrefixLSAPacket>, const bytevector> extractPrefix(const bytevector& input);

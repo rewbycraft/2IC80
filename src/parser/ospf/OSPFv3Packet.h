@@ -50,6 +50,7 @@ namespace parser {
 		
 		void toString(const std::function<void(const std::string&)>&) const override;
 		
+		void updateValues() override;
 	};
 }
 

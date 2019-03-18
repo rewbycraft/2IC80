@@ -65,3 +65,9 @@ const std::vector<std::shared_ptr<parser::PrefixLSAPacket>> &parser::IntraAreaPr
 void parser::IntraAreaPrefixLSAPacket::setPrefixes(const std::vector<std::shared_ptr<parser::PrefixLSAPacket>> &prefixes) {
 	IntraAreaPrefixLSAPacket::prefixes = prefixes;
 }
+
+void parser::IntraAreaPrefixLSAPacket::updateValues() {
+	for (auto& packet : prefixes) {
+		packet->updateValues();
+	}
+}

@@ -66,3 +66,9 @@ const std::vector<std::shared_ptr<parser::PrefixLSAPacket>> &parser::LinkLSAPack
 void parser::LinkLSAPacket::setPrefixes(const std::vector<std::shared_ptr<parser::PrefixLSAPacket>> &prefixes) {
 	LinkLSAPacket::prefixes = prefixes;
 }
+
+void parser::LinkLSAPacket::updateValues() {
+	for (auto& prefix: prefixes) {
+		prefix->updateValues();
+	}
+}

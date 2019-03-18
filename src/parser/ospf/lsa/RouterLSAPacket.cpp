@@ -64,3 +64,7 @@ void parser::RouterLSAPacket::toString(const std::function<void(const std::strin
 		printer("| Neighbor Router ID: " + Tins::IPv4Address(byteswap(interface.neighbor_router_id)).to_string());
 	}
 }
+
+void parser::RouterLSAPacket::updateValues() {
+
+}
