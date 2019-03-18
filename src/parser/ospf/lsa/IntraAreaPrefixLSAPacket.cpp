@@ -2,7 +2,9 @@
 // Created by rewbycraft on 3/16/19.
 //
 
+#include <tins/ip_address.h>
 #include "IntraAreaPrefixLSAPacket.h"
+#include "../../../util.h"
 
 parser::IntraAreaPrefixLSAPacket::IntraAreaPrefixLSAPacket() {}
 
@@ -36,7 +38,16 @@ const parser::bytevector parser::IntraAreaPrefixLSAPacket::serialize() const {
 }
 
 void parser::IntraAreaPrefixLSAPacket::toString(const std::function<void(const std::string &)> &printer) const {
-
+	printer("== Intra Area Prefix LSA Header ==");
+	printer("#prefixes: " + std::to_string(header.num_prefixes));
+	printer("Ref LS type: " + std::to_string(header.referenced_lsa_type));
+	printer("Ref LS ID: " + std::to_string(header.referenced_link_state_id));
+	printer("Ref Advertising Router: " + Tins::IPv4Address(parser::byteswap(header.referenced_advertising_router)).to_string());
+	size_t i = 0;
+	for (auto& prefix : prefixes) {
+		printer("Prefix #" + std::to_string(i++) + ":");
+		prefix->toString(util::prepend_printer(printer));
+	}
 }
 
 const parser::IntraAreaPrefixLSAPacket::Header &parser::IntraAreaPrefixLSAPacket::getHeader() const {

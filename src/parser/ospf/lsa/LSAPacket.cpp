@@ -8,6 +8,7 @@
 #include "RouterLSAPacket.h"
 #include "../../../util.h"
 #include "IntraAreaPrefixLSAPacket.h"
+#include "LinkLSAPacket.h"
 
 parser::LSAPacket::LSAPacket() : Packet() {
 
@@ -50,7 +51,7 @@ parser::LSAPacket::LSAPacket(const parser::bytevector &data) : Packet(data) {
 				throw parser::MalformedPacketException("Unimplemented LSA type: " + std::to_string(function));
 				break;
 			case LINK_LSA:
-				throw parser::MalformedPacketException("Unimplemented LSA type: " + std::to_string(function));
+				subpacket = std::make_shared<parser::LinkLSAPacket>(payload);
 				break;
 			case INTRA_AREA_PREFIX_LSA:
 				subpacket = std::make_shared<parser::IntraAreaPrefixLSAPacket>(payload);
