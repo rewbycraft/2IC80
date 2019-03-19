@@ -114,7 +114,14 @@ void parser::LSAPacket::updateValues() {
 		header.length += subpacket->serialize().size();
 		subpacket->updateValues();
 	}
-	
-	header.checksum = 0;
-	header.checksum = parser::checksum::lsa::calcChecksum(this->serialize());
+
+	updateChecksum();
+}
+
+void parser::LSAPacket::updateChecksum() {
+    //uint16_t age = header.age;
+    //header.age = 0;
+    //header.checksum = 0;
+    header.checksum = parser::checksum::lsa::calcChecksum(this->serialize());
+    //header.age = age;
 }

@@ -56,6 +56,11 @@ private:
 		void toString(const std::function<void(const std::string &)> &printer) const override;
 		
 		void updateValues() override;
+
+		/**
+		 * Calculates and updates the checksum of this message.
+		 */
+		void updateChecksum();
 	};
 }
 
