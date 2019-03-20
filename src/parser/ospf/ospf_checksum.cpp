@@ -6,7 +6,7 @@
 #include "ospf_checksum.h"
 
 
-std::uint16_t parser::calcOSPFChecksum(uint128_t sourceAddress, uint128_t destAddress,
+std::uint16_t parser::checksum::ospf::calcChecksum(uint128_t sourceAddress, uint128_t destAddress,
 		std::uint32_t length, parser::bytevector data)
 {
 	// Initialize hash.
@@ -38,10 +38,10 @@ std::uint16_t parser::calcOSPFChecksum(uint128_t sourceAddress, uint128_t destAd
 	return hash;
 }
 
-bool parser::verifyOSPFChecksum(uint128_t sourceAddress, uint128_t destAddress,
+bool parser::checksum::ospf::verifyChecksum(uint128_t sourceAddress, uint128_t destAddress,
 		std::uint32_t length, parser::bytevector data)
 {
-	return (calcOSPFChecksum(sourceAddress, destAddress, length, data) == 0);
+	return (parser::checksum::ospf::calcChecksum(sourceAddress, destAddress, length, data) == 0);
 	/*
 	// Initialize hash.
 	std::uint16_t hash = 0;

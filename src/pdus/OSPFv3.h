@@ -29,6 +29,8 @@ namespace pdu {
 		uint32_t size() const;
 		
 		const parser::OSPFv3Packet &getPacket() const;
+		
+		void updateValues(const Tins::IPv6 &pdu);
 	
 	protected:
 		void write_serialization(uint8_t *buffer, uint32_t total_sz) override;

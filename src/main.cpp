@@ -9,11 +9,11 @@ using namespace Tins;
 
 bool processPacket(const PDU &pdu) {
 	const IPv6 &ip = pdu.rfind_pdu<IPv6>();
-	const auto &ospf = ip.rfind_pdu<pdu::OSPFv3>();
+	auto ospf = ip.rfind_pdu<pdu::OSPFv3>();
 	std::cout << "IP: " << ip.src_addr() << " -> " << ip.dst_addr() << std::endl;
 	
-	auto v = ospf.getPacket();
-	v.updateValues();
+	ospf.updateValues(ip);
+	
 	std::cout << ospf.getPacket().Packet::toString() << std::endl;
 	
 	std::cout << "Re-encoded packet: " << std::hex;

@@ -31,6 +31,7 @@ namespace parser {
 	private:
 		Header header;
 		std::shared_ptr<Packet> subpacket;
+		uint128_t source = 0, dest = 0;
 	public:
 		OSPFv3Packet();
 		
@@ -51,6 +52,14 @@ namespace parser {
 		void toString(const std::function<void(const std::string&)>&) const override;
 		
 		void updateValues() override;
+		
+		uint128_t getSource() const;
+		
+		void setSource(uint128_t source);
+		
+		uint128_t getDest() const;
+		
+		void setDest(uint128_t dest);
 	};
 }
 

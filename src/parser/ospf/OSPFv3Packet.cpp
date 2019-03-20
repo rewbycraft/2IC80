@@ -11,6 +11,7 @@
 #include "LinkStateUpdatePacket.h"
 #include "LinkStateAcknowledgementPacket.h"
 #include "../../util.h"
+#include "ospf_checksum.h"
 
 parser::OSPFv3Packet::OSPFv3Packet() : Packet() {
 
@@ -88,6 +89,12 @@ void parser::OSPFv3Packet::toString(const std::function<void(const std::string&)
 	printer("Checksum: " + util::to_hex_string(header.checksum));
 	printer("Instance ID: " + std::to_string(header.instance_id));
 	printer("Reserved: " + util::to_hex_string(header.reserved));
+	if (dest != 0) {
+		printer("IPv6 Destination: " + util::to_hex_string(dest));
+	}
+	if (source != 0) {
+		printer("IPv6 Source: " + util::to_hex_string(source));
+	}
 	
 	if (subpacket) {
 		printer("Subpacket:");
@@ -98,7 +105,28 @@ void parser::OSPFv3Packet::toString(const std::function<void(const std::string&)
 void parser::OSPFv3Packet::updateValues() {
 	header.packet_length = 16;
 	if (subpacket) {
-		header.packet_length += subpacket->serialize().size();
 		subpacket->updateValues();
+		header.packet_length += subpacket->serialize().size();
 	}
+	
+	if (dest != 0 && source != 0) {
+		header.checksum = 0;
+		header.checksum = parser::checksum::ospf::calcChecksum(source, dest, header.packet_length, serialize());
+	}
+}
+
+uint128_t parser::OSPFv3Packet::getSource() const {
+	return source;
+}
+
+void parser::OSPFv3Packet::setSource(uint128_t source) {
+	OSPFv3Packet::source = source;
+}
+
+uint128_t parser::OSPFv3Packet::getDest() const {
+	return dest;
+}
+
+void parser::OSPFv3Packet::setDest(uint128_t dest) {
+	OSPFv3Packet::dest = dest;
 }

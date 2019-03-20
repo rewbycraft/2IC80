@@ -3,7 +3,6 @@
 //
 
 #include "OSPFv3.h"
-#include "../parser/MalformedPacketException.h"
 
 using namespace Tins;
 
@@ -32,7 +31,7 @@ void pdu::OSPFv3::write_serialization(uint8_t *buffer, uint32_t total_sz) {
 	memcpy(buffer, result.data(), result.size());
 }
 
-pdu::OSPFv3::OSPFv3(const uint8_t *data, uint32_t sz) : packet(parser::bytevector(data, data+sz)) {
+pdu::OSPFv3::OSPFv3(const uint8_t *data, uint32_t sz) : packet(parser::bytevector(data, data + sz)) {
 }
 
 pdu::OSPFv3::OSPFv3() : PDU() {
@@ -41,4 +40,30 @@ pdu::OSPFv3::OSPFv3() : PDU() {
 
 const parser::OSPFv3Packet &pdu::OSPFv3::getPacket() const {
 	return packet;
+}
+
+void pdu::OSPFv3::updateValues(const Tins::IPv6 &pdu) {
+	{
+		uint128_t v = 0;
+		static_assert(sizeof(uint128_t) == Tins::IPv6Address::address_size, "Not enough space.");
+		auto addr = pdu.dst_addr();
+		Tins::IPv6Address::const_iterator iter = addr.begin();
+		for (; iter != addr.end(); ++iter) {
+			v <<= 8;
+			v |= *iter;
+		}
+		packet.setDest(v);
+	}
+	{
+		uint128_t v = 0;
+		static_assert(sizeof(uint128_t) == Tins::IPv6Address::address_size, "Not enough space.");
+		auto addr = pdu.src_addr();
+		Tins::IPv6Address::const_iterator iter = addr.begin();
+		for (; iter != addr.end(); ++iter) {
+			v <<= 8;
+			v |= *iter;
+		}
+		packet.setSource(v);
+	}
+	packet.updateValues();
 }

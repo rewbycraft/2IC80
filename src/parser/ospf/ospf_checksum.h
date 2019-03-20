@@ -11,35 +11,38 @@
 
 
 namespace parser {
-	/**
-	 * Calculates the OSPF checksum.
-	 * Note that the given data doesn't have to be in the right order.
-	 * The checksum field should be excluded from the {@code data} field.
-	 *
-	 * @param sourceAddress the 128 bit IPv6 source address field.
-	 * @param destAddress the 128 bit IPv6 destination address field.
-	 * @param length the 32 bit IPv6 length field.
-	 * @param data the data stream of the OSPF header.
-	 * @return the hash of the OSPF header.
-	 */
-	std::uint16_t calcOSPFChecksum(uint128_t sourceAddress, uint128_t destAddress,
-			std::uint32_t length, bytevector data);
-
-	/**
-	 * Verifies the OSPF checksum.
-	 * Note that the given data doesn't have to be in the right order.
-	 * The checksum field must be included in the {@code data} field.
-	 *
-	 * @param sourceAddress the 128 bit IPv6 source address field.
-	 * @param destAddress the 128 bit IPv6 destination address field.
-	 * @param length the 32 bit IPv6 length field.
-	 * @param data the data stream of the OSPF header.
-	 * @return {@code true} if the hash in this OSPF header was valid. {@code false} otherwise.
-	 */
-	bool verifyOSPFChecksum(uint128_t sourceAddress, uint128_t destAddress,
-			std::uint32_t length, bytevector data);
-
-
+	namespace checksum {
+		namespace ospf {
+			
+			/**
+			 * Calculates the OSPF checksum.
+			 * Note that the given data doesn't have to be in the right order.
+			 * The checksum field should be excluded from the {@code data} field.
+			 *
+			 * @param sourceAddress the 128 bit IPv6 source address field.
+			 * @param destAddress the 128 bit IPv6 destination address field.
+			 * @param length the 32 bit IPv6 length field.
+			 * @param data the data stream of the OSPF header.
+			 * @return the hash of the OSPF header.
+			 */
+			std::uint16_t calcChecksum(uint128_t sourceAddress, uint128_t destAddress,
+			                               std::uint32_t length, bytevector data);
+			/**
+			 * Verifies the OSPF checksum.
+			 * Note that the given data doesn't have to be in the right order.
+			 * The checksum field must be included in the {@code data} field.
+			 *
+			 * @param sourceAddress the 128 bit IPv6 source address field.
+			 * @param destAddress the 128 bit IPv6 destination address field.
+			 * @param length the 32 bit IPv6 length field.
+			 * @param data the data stream of the OSPF header.
+			 * @return {@code true} if the hash in this OSPF header was valid. {@code false} otherwise.
+			 */
+			bool verifyChecksum(uint128_t sourceAddress, uint128_t destAddress,
+			                        std::uint32_t length, bytevector data);
+		}
+	}
+	
 }
 
 #endif //ATTACK_OSPF_CHECKSUM_H
