@@ -111,7 +111,7 @@ void parser::OSPFv3Packet::updateValues() {
 	
 	if (dest != 0 && source != 0) {
 		header.checksum = 0;
-		header.checksum = parser::checksum::ospf::calcChecksum(source, dest, header.packet_length, serialize());
+		header.checksum = parser::checksum::ospf::calcChecksum(parser::byteswap(source), parser::byteswap(dest), header.packet_length, serialize());
 	}
 }
 
