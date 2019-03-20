@@ -56,6 +56,10 @@ add_executable(pcapdump tools/pcapdump.cpp)
 target_include_directories(pcapdump PRIVATE ${PROJECT_SOURCE_DIR}/libtins/include ${PROJECT_SOURCE_DIR}/spdlog/include)
 target_link_libraries(pcapdump attack_lib)
 
+add_executable(random tools/random.cpp)
+target_include_directories(random PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/libtins/include ${PROJECT_SOURCE_DIR}/spdlog/include)
+target_link_libraries(random attack_lib)
+
 
 option(PACKAGE_TESTS "Build the tests" ON)
 if(PACKAGE_TESTS)
