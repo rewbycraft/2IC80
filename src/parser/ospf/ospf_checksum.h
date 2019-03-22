@@ -27,6 +27,7 @@ namespace parser {
 			 */
 			std::uint16_t calcChecksum(uint128_t sourceAddress, uint128_t destAddress,
 			                               std::uint32_t length, const bytevector& data);
+
 			/**
 			 * Verifies the OSPF checksum.
 			 * Note that the given data doesn't have to be in the right order.
