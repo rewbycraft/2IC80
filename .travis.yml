@@ -1,0 +1,21 @@
+language: cpp
+
+matrix:
+  include:
+    - os: linux
+      dist: bionic
+      sudo: true
+      compiler: gcc
+      addons:
+        apt:
+          packages:
+            - build-essential
+            - libpcap-dev
+            - libboost-all-dev
+            - cmake
+script:
+  - mkdir -p build
+  - cd build
+  - cmake ..
+  - make
+  - make test
