@@ -26,7 +26,7 @@ namespace parser {
 			 * @return the hash of the OSPF header.
 			 */
 			std::uint16_t calcChecksum(uint128_t sourceAddress, uint128_t destAddress,
-			                               std::uint32_t length, bytevector data);
+			                               std::uint32_t length, const bytevector& data);
 			/**
 			 * Verifies the OSPF checksum.
 			 * Note that the given data doesn't have to be in the right order.
@@ -39,7 +39,7 @@ namespace parser {
 			 * @return {@code true} if the hash in this OSPF header was valid. {@code false} otherwise.
 			 */
 			bool verifyChecksum(uint128_t sourceAddress, uint128_t destAddress,
-			                        std::uint32_t length, bytevector data);
+			                        std::uint32_t length, const bytevector& data);
 		}
 	}
 	

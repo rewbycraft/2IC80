@@ -123,8 +123,8 @@ std::uint16_t parser::checksum::lsa::calcChecksum(const parser::bytevector& data
 
 	int y = 510 - res.first - x;
 	if (y > 255) y -= 255;
-    std::cout << "0x" << std::hex << x << std::dec << " / " << x << " / 0b " << std::bitset<8>(x) << "\n";
-    std::cout << "0x" << std::hex << y << std::dec << " / " << y << " / 0b " << std::bitset<8>(y) << "\n";
+    //std::cout << "0x" << std::hex << x << std::dec << " / " << x << " / 0b " << std::bitset<8>(x) << "\n";
+    //std::cout << "0x" << std::hex << y << std::dec << " / " << y << " / 0b " << std::bitset<8>(y) << "\n";
 
 	return uint16_t((x << 8) | y);
 
