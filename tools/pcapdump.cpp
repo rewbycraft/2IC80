@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
 	for (auto& t : packets) {
 		auto packet = std::get<0>(t);
 		auto src = std::get<1>(t);
-		auto dst = std::get<1>(t);
+		auto dst = std::get<2>(t);
 		std::cout << "TEST(ParserTest, ReconstructTest" << c++ << ") {" << std::endl;
 		std::cout << "\tparser::bytevector data = {";
 		for (size_t i = 0; i < packet.size(); i++) {
