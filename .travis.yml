@@ -8,8 +8,6 @@ matrix:
       compiler: gcc
       addons:
         apt:
-          sources:
-            - ppa:ubuntu-toolchain-r/test
           packages:
             - build-essential
             - libpcap-dev
@@ -17,6 +15,12 @@ matrix:
             - libboost-all-dev
             - cmake
             - gcc-8
+
+before_install:
+  # C++17
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo apt-get update -qq
+
 script:
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 90
   - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 90
