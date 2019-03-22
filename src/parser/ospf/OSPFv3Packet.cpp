@@ -38,7 +38,6 @@ parser::OSPFv3Packet::OSPFv3Packet(const parser::bytevector& data) : Packet(data
 			break;
 		default:
 			throw parser::MalformedPacketException("Invalid OSPF packet type.");
-			break;
 	}
 	
 	
@@ -108,7 +107,7 @@ void parser::OSPFv3Packet::updateValues() {
 		subpacket->updateValues();
 		header.packet_length += subpacket->serialize().size();
 	}
-	
+
 	if (dest != 0 && source != 0) {
 		header.checksum = 0;
 		header.checksum = parser::checksum::ospf::calcChecksum(parser::byteswap(source), parser::byteswap(dest), header.packet_length, serialize());
