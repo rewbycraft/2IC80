@@ -16,3 +16,7 @@ struct test_t test(parser::bytevector& vec) {
 	parser::deserializeObject(t, vec);
 	return t;
 }
+
+int main(int argc, char* argv[]) {
+
+}
