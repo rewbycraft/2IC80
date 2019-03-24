@@ -1,8 +1,11 @@
+#include <utility>
+
 //
 // Created by rewbycraft on 2/22/19.
 //
 
 #include "OSPFv3.h"
+#include "../tinshelper.h"
 
 using namespace Tins;
 
@@ -43,27 +46,11 @@ const parser::OSPFv3Packet &pdu::OSPFv3::getPacket() const {
 }
 
 void pdu::OSPFv3::updateValues(const Tins::IPv6 &pdu) {
-	{
-		uint128_t v = 0;
-		static_assert(sizeof(uint128_t) == Tins::IPv6Address::address_size, "Not enough space.");
-		auto addr = pdu.dst_addr();
-		Tins::IPv6Address::const_iterator iter = addr.begin();
-		for (; iter != addr.end(); ++iter) {
-			v <<= 8;
-			v |= *iter;
-		}
-		packet.setDest(v);
-	}
-	{
-		uint128_t v = 0;
-		static_assert(sizeof(uint128_t) == Tins::IPv6Address::address_size, "Not enough space.");
-		auto addr = pdu.src_addr();
-		Tins::IPv6Address::const_iterator iter = addr.begin();
-		for (; iter != addr.end(); ++iter) {
-			v <<= 8;
-			v |= *iter;
-		}
-		packet.setSource(v);
-	}
+	packet.setDest(tinshelper::tins_to_raw(pdu.dst_addr()));
+	packet.setSource(tinshelper::tins_to_raw(pdu.src_addr()));
 	packet.updateValues();
+}
+
+pdu::OSPFv3::OSPFv3(parser::OSPFv3Packet packet) : packet(std::move(packet)) {
+
 }

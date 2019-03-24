@@ -60,6 +60,8 @@ namespace parser {
 		uint128_t getDest() const;
 		
 		void setDest(uint128_t dest);
+		
+		void transmit() const;
 	};
 }
 

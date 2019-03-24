@@ -12,6 +12,8 @@
 #include "LinkStateAcknowledgementPacket.h"
 #include "../../util.h"
 #include "ospf_checksum.h"
+#include "../../tinshelper.h"
+#include "../../pdus/OSPFv3.h"
 
 parser::OSPFv3Packet::OSPFv3Packet() : Packet() {
 
@@ -132,4 +134,13 @@ uint128_t parser::OSPFv3Packet::getDest() const {
 
 void parser::OSPFv3Packet::setDest(uint128_t dest) {
 	OSPFv3Packet::dest = dest;
+}
+
+void parser::OSPFv3Packet::transmit() const {
+	if (dest == 0 || source == 0)
+		throw MalformedPacketException("Cannot send packet without destination and source.");
+	
+	Tins::PacketSender sender;
+	Tins::IPv6 pkt = Tins::IPv6(tinshelper::raw_to_tins(dest), tinshelper::raw_to_tins(source)) / pdu::OSPFv3(*this);
+	sender.send(pkt);
 }

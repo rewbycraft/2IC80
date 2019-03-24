@@ -20,6 +20,8 @@ namespace pdu {
 		
 		OSPFv3();
 		
+		OSPFv3(parser::OSPFv3Packet packet);
+		
 		uint32_t header_size() const override;
 		
 		PDU *clone() const override;
