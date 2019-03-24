@@ -1,6 +1,8 @@
 # OSPFv3 Disguised LSA
 Implementation of a Disguised LSA attack for OSPFv3.
 
+[![Build Status](https://travis-ci.org/rewbycraft/OSPFv3DisguisedLSA.svg?branch=master)](https://travis-ci.org/rewbycraft/OSPFv3DisguisedLSA)
+
 ## What is this?
 The Disguised LSA attack for OSPF has been widely described. [1] [2] [3]
 However, we were unable to find an example of someone performing this attack against the latest generation of OSPF, OSPFv3.
