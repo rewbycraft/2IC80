@@ -1,19 +1,130 @@
-%%
-%% Author: rewbycraft
-%% 3/24/19
-%%
+\documentclass[11pt,a4paper,oneside]{article}
 
-% Preamble
-\documentclass[11pt]{article}
+\newcommand{\ftitle}{OSPFv3 Routing Attack}
+\newcommand{\fauthor}{
+    Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
+}
+\newcommand{\coursecode}{2IC80}
+\newcommand{\coursename}{Lab Offensive Computer Security}
+\newcommand{\footertitle}{2WF80 - Homework Set 2}
+\newcommand{\preamble}{}
 
-% Packages
+
+\usepackage[includeheadfoot,top=0.5in,bottom=0.5in]{geometry}
+\usepackage{mathtools}
+\usepackage[T1]{fontenc}
+\usepackage[normalem]{ulem}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{xparse}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{tabularx}
+\usepackage{calc}
 \usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{hhline}          % For using double lines in tables
+\usepackage{multido}         % For using multido
+\usepackage{graphicx}        % For using pictures
+\usepackage{float}
 
-% Document
+\pagestyle{fancy}
+\renewcommand{\sectionmark}[1]{\markright{#1}}
+\fancyhf{}
+\lhead{{\textsc{\fancyplain{}{\rightmark }}}}
+\rhead{{\raisebox{-0.30\height}{\includegraphics[height=20pt]{tuelogo.pdf}}}}
+\cfoot{{\thepage}}
+\lfoot{{\fauthor}}
+\rfoot{{\textsc{\coursecode { -} \ftitle}}}
+\renewcommand\headrulewidth{1pt}
+\renewcommand\footrulewidth{1pt}
+\setlength{\headheight}{26pt}
+\setlength{\headsep}{0.75in}
+\addtolength{\footskip}{0.50in}
+\addtolength{\textheight}{-1.25in}
+
+\fancyheadoffset{0.5in}
+\fancyfootoffset{0.5in}
+\newcommand{\longdiv}[2]{$\strut#1$\kern.25em\smash{\raise.3ex\hbox{$\big)$}}$\mkern-8mu\overline{\enspace\strut#2}$}
+\newcommand{\tab}[1][1]{\leavevmode{\parindent=#1em\indent}}
+
+\fancypagestyle{plain} {
+    \fancyhf{}
+    \lhead{{\textsc{\fancyplain{}{\rightmark }}}}
+    \rhead{{\raisebox{-0.30\height}{\includegraphics[height=20pt]{tuelogo.pdf}}}}
+    \cfoot{{\thepage}}
+    \lfoot{{\fauthor}}
+    \rfoot{{\textsc{\coursecode { -} \ftitle}}}
+    \renewcommand\headrulewidth{1pt}
+    \renewcommand\footrulewidth{1pt}
+    \setlength{\headheight}{26pt}
+    \setlength{\headsep}{0.75in}
+    \addtolength{\footskip}{0.50in}
+    \addtolength{\textheight}{-1.25in}
+    
+    \fancyheadoffset{0.5in}
+    \fancyfootoffset{0.5in}
+}
+
+
+\newcommand{\headrulecolour}{0.823529412,0.125490196,0.384313725}
+\let\oldheadrule\headrule
+\renewcommand{\headrule}{{\color[rgb]{\headrulecolour}\oldheadrule}}
+
+\preamble
+
+\newcommand{\ssection}[1]{\section*{#1}\markright{#1}}
+
+\title{\ftitle\\\coursecode { -} \coursename}
+\author{\fauthor}
+
+
 \begin{document}
-
-    \title{Report}
-    \maketitle
+    \maketitle\thispagestyle{fancy}
+    \newpage
+    \tableofcontents
+    \newpage
+    
+    
+    \section{Introduction}
+    	
+    \section{Scenario}
+    		Gentco is one of the leading manufacturers of dashing Bowler Hats. Recently the price of unique, high quality Swiss leather that \textit{Gentco} relies on to make their most popular hat has gone up.\\
+    		Management at \textit{Gentco} believes that their competitor, \textit{Dapper Inc}, has been bribing \textit{Gentco}'s exclusive supplier in order to raise prices for Gentco. This would be in direct violation of the contract Gentco has with the supplier. Gentco management is reluctant to make such a direct claim without proof since, if they are wrong, this could deteriate the relationship even further.\\
+    		That's why they want us to obtain proof of this. To do so, they want us to investigate \textit{Dapper Inc} and figure out if they are indeed paying off \textit{Gentco}'s supplier.\\
+    		We started off by obtaining a dump of \textit{Dapper Inc}'s DNS records. One of the system admins had forgotten to disable zone transfers, so these were easily obtainable.\\
+    		By looking at these records we discovered that \textit{Dapper Inc} runs a very modern network, where everything uses IPv6. Undeterred, we started scanning the systems we discovered in the DNS dump. The networking team at \textit{Dapper Inc} has the fortress locked up quite tight, but htey made one mistake. One of their core routers' management interfaces isn't firewalled off.\\
+    		The SSH deamon's banner reveals that \textit{Dapper Inc} uses some of the latest routers byso \textit{ACME Networks} Recently it was discovered that this vendor includes a hardcoded backdoor account with full privileges in all their routers. Using this account, we gained full access to this core router.\\
+    		Now that we've got a foothold in their network, we need to obtain information. This router uses a Linux based OS assisted by application specific integrated circuits for high performance routing. This presents a problem. We cannot see the traffic passing through the router. The hardware is, however, capable of terminating GRE based tunnels and treating them as if they are physical ports. We also were able to perform some network reconnaisance and obtain a wealth of information about the structure of \textit{Dapper Inc}'s network. This information is presented in \textit{Section \ref{Environment}}. 
+    		
+    		
+    \section{Environment}\label{Environment}
+    		
+    \section{Objectives}\label{Objectives}
+    		
+	    \subsection{Protocol}\label{Protocol}
+	    		
+    		\subsection{Parser}\label{Parser}
+    			
+    		\subsection{Attack execution}\label{Attack_exec}
+    			
+    \section{Discussion}\label{Discussion}
+    		
+    \section{Results}\label{Results}
+    		
+    
+    
+    
+    \begin{thebibliography}{999}    
+\bibitem{ref}
+author,
+title,
+publisher,
+Country e.d.
+edition,
+date
+    \end{thebibliography}
 
 
 \end{document}
