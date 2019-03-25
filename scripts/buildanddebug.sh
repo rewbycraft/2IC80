@@ -8,5 +8,7 @@ fi
 
 cd "$(dirname "$(realpath "$0")")"/..
 
+export BUILDTYPE=Debug
 ./scripts/build.sh
+
 exec sudo ./scripts/debug.sh -l 0 -n c2
