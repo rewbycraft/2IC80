@@ -12,7 +12,7 @@
 #include <exception>
 #include <sstream>
 #include <cstring>
-#include <filesystem>
+#include <experimental/filesystem>
 #include "../spdlog/include/spdlog/spdlog.h"
 
 class NSException : public std::exception {
@@ -33,14 +33,14 @@ public:
 	}
 };
 
-inline static const std::filesystem::path getNSPath(const std::string &str) {
-	std::filesystem::path p = "/var/run/netns";
+inline static const std::experimental::filesystem::path getNSPath(const std::string &str) {
+	std::experimental::filesystem::path p = "/var/run/netns";
 	p /= str;
 	return p;
 }
 
 bool netns::exists(const std::string &ns) {
-	return std::filesystem::exists(getNSPath(ns));
+	return std::experimental::filesystem::exists(getNSPath(ns));
 }
 
 void netns::enter(const std::string &ns) {
