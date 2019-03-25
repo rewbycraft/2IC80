@@ -2,6 +2,7 @@
 // Created by rewbycraft on 2/25/19.
 //
 
+#include <tins/constants.h>
 #include "OSPFv3Packet.h"
 #include "../MalformedPacketException.h"
 #include "../internal.h"
@@ -142,6 +143,18 @@ void parser::OSPFv3Packet::transmit() const {
 	
 	Tins::PacketSender sender;
 	Tins::IPv6 pkt = Tins::IPv6(tinshelper::raw_to_tins(dest), tinshelper::raw_to_tins(source)) / pdu::OSPFv3(*this);
-	auto eth = Tins::EthernetII() / pkt;
-	sender.send(eth, pkt.src_addr());
+	if (!pkt.dst_addr().is_multicast()) {
+		sender.send(pkt, pkt.src_addr());
+	} else {
+		Tins::NetworkInterface intf = pkt.src_addr();
+		
+		Tins::HWAddress<6> bcmac("33:33:00:00:00:00");
+		for (int i = 0; i < 4; i++) {
+			bcmac.begin()[5-i] |= pkt.dst_addr().begin()[15-i];
+		}
+		
+		auto e = Tins::EthernetII(bcmac, intf.hw_address()) / pkt;
+		e.payload_type(Tins::Constants::Ethernet::IPV6);
+		sender.send(e, intf);
+	}
 }
