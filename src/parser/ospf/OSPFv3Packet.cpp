@@ -142,5 +142,6 @@ void parser::OSPFv3Packet::transmit() const {
 	
 	Tins::PacketSender sender;
 	Tins::IPv6 pkt = Tins::IPv6(tinshelper::raw_to_tins(dest), tinshelper::raw_to_tins(source)) / pdu::OSPFv3(*this);
-	sender.send(pkt);
+	auto eth = Tins::EthernetII() / pkt;
+	sender.send(eth, pkt.src_addr());
 }
