@@ -142,7 +142,8 @@ void parser::OSPFv3Packet::transmit() const {
 		throw MalformedPacketException("Cannot send packet without destination and source.");
 	
 	Tins::PacketSender sender;
-	Tins::IPv6 pkt = Tins::IPv6(tinshelper::raw_to_tins(dest), tinshelper::raw_to_tins(source)) / pdu::OSPFv3(*this);
+	std::shared_ptr<parser::OSPFv3Packet> pp = std::make_shared<parser::OSPFv3Packet>(*this);
+	Tins::IPv6 pkt = Tins::IPv6(tinshelper::raw_to_tins(dest), tinshelper::raw_to_tins(source)) / pdu::OSPFv3(pp);
 	if (!pkt.dst_addr().is_multicast()) {
 		sender.send(pkt, pkt.src_addr());
 	} else {
