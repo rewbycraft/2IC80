@@ -11,10 +11,15 @@ using namespace Tins;
 bool processPacket(const PDU &pdu) {
 	auto logger = spdlog::get("capture");
 	
-	const IPv6 &ip = pdu.rfind_pdu<IPv6>();
-	const auto &ospf = ip.rfind_pdu<pdu::OSPFv3>();
-	logger->trace("IP: {} -> {}", ip.src_addr().to_string(), ip.dst_addr().to_string());
+	const EthernetII &eth = pdu.rfind_pdu<EthernetII>();
+	const IPv6 &ip = eth.rfind_pdu<IPv6>();
+	auto ospf = ip.rfind_pdu<pdu::OSPFv3>();
+	ospf.updateValues(ip);
+
+	logger->trace("Ethernet: {} -> {}", eth.src_addr().to_string(), eth.dst_addr().to_string());
+	logger->trace("IP:       {} -> {}", ip.src_addr().to_string(), ip.dst_addr().to_string());
 	logger->trace(ospf.getPacket()->Packet::toString());
+	
 	
 	statemachine::onPacket(ospf.getPacket());
 	
@@ -34,7 +39,7 @@ int attack_main(int argc, char *argv[]) {
 	boost::program_options::notify(vm);
 	
 	//Create spdloggers
-	for (auto &s : {"main", "netns", "statemachine", "capture"}) {
+	for (auto &s : {"main", "netns", "statemachine", "capture", "transmit"}) {
 		auto l = spdlog::stdout_color_mt(s);
 		l->set_level(static_cast<spdlog::level::level_enum>(vm["log"].as<typename std::underlying_type<spdlog::level::level_enum>::type>()));
 	}

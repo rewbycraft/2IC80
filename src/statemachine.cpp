@@ -7,10 +7,12 @@
 #include <boost/statechart/event.hpp>
 #include <boost/statechart/state_machine.hpp>
 #include <boost/statechart/simple_state.hpp>
+#include <boost/statechart/state.hpp>
 #include <boost/statechart/transition.hpp>
 #include <boost/statechart/custom_reaction.hpp>
 #include "spdlog/spdlog.h"
 #include "parser/ospf/HelloPacket.h"
+#include "parser/ospf/DatabaseDescriptionPacket.h"
 
 namespace sc = boost::statechart;
 
@@ -48,6 +50,9 @@ namespace statemachine {
 		uint32_t self;
 		// [a, b, metric]
 		std::vector<std::tuple<uint32_t, uint32_t, uint16_t>> targets;
+		
+		std::shared_ptr<parser::OSPFv3Packet> neighbor_hello;
+		
 	} machine;
 	
 	namespace state {
@@ -67,9 +72,6 @@ namespace statemachine {
 		struct DiscoverNeighbor : sc::simple_state<DiscoverNeighbor, Machine> {
 			typedef sc::custom_reaction<event::Packet> reactions;
 			
-			std::shared_ptr<parser::HelloPacket> neighborhello;
-			std::shared_ptr<parser::OSPFv3Packet> neighbor;
-			
 			DiscoverNeighbor() {
 				logger->info("Waiting for neighbor...");
 			}
@@ -81,18 +83,47 @@ namespace statemachine {
 				if (packet.packet->getHeader().router_id == context<Machine>().self)
 					return forward_event();
 				
-				neighborhello = std::dynamic_pointer_cast<parser::HelloPacket>(packet.packet->getSubpacket());
-				neighbor = packet.packet;
+				context<Machine>().neighbor_hello = packet.packet;
 				
-				logger->info("Found neighbor {}.", Tins::IPv4Address(parser::byteswap<uint32_t>(neighbor->getHeader().router_id)).to_string());
+				logger->info("Found neighbor {}.", Tins::IPv4Address(parser::byteswap<uint32_t>(context<Machine>().neighbor_hello->getHeader().router_id)).to_string());
 				
 				return transit<DatabaseTransfer>();
 			}
 		};
 		
-		struct DatabaseTransfer : sc::simple_state<DatabaseTransfer, Machine, DDCollect> {
-			DatabaseTransfer() {
+		struct DatabaseTransfer : sc::state<DatabaseTransfer, Machine, DDCollect> {
+			typedef sc::state< DatabaseTransfer, Machine, DDCollect > my_base;
+			DatabaseTransfer(my_context ctx) : my_base(ctx) {
 				logger->info("Starting database transfer...");
+				auto ospfPkt = std::make_shared<parser::OSPFv3Packet>();
+				
+				{
+					auto ospfHdr = ospfPkt->getHeader();
+					ospfHdr.type = parser::OSPFv3Packet::DATABASE_DESCRIPTION;
+					ospfHdr.router_id = context<Machine>().self;
+					ospfHdr.instance_id = 0;
+					ospfHdr.area_id = 0;
+					ospfHdr.version = 3;
+					ospfPkt->setHeader(ospfHdr);
+				}
+				
+				auto dbPkt = std::make_shared<parser::DatabaseDescriptionPacket>();
+				ospfPkt->setSubpacket(dbPkt);
+				
+				{
+					auto dbHdr = dbPkt->getHeader();
+					dbHdr.options = 0x113;
+					dbHdr.interface_mtu = 1500;
+					dbHdr.database_options = 0x07;
+					dbHdr.dd_seq = 0x12345678;
+					dbPkt->setHeader(dbHdr);
+				}
+				
+				uint128_t neigh = context<Machine>().neighbor_hello->getSource();
+				ospfPkt->setDest(neigh);
+				ospfPkt->setSourceFromDest();
+				ospfPkt->updateValues();
+				ospfPkt->transmit();
 			}
 		};
 		

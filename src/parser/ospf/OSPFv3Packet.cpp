@@ -3,6 +3,7 @@
 //
 
 #include <tins/constants.h>
+#include <spdlog/spdlog.h>
 #include "OSPFv3Packet.h"
 #include "../MalformedPacketException.h"
 #include "../internal.h"
@@ -141,10 +142,14 @@ void parser::OSPFv3Packet::transmit() const {
 	if (dest == 0 || source == 0)
 		throw MalformedPacketException("Cannot send packet without destination and source.");
 	
+	auto logger = spdlog::get("transmit");
+	
+	logger->debug("Sending packet packet: {}", Packet::toString());
 	Tins::PacketSender sender;
 	std::shared_ptr<parser::OSPFv3Packet> pp = std::make_shared<parser::OSPFv3Packet>(*this);
 	Tins::IPv6 pkt = Tins::IPv6(tinshelper::raw_to_tins(dest), tinshelper::raw_to_tins(source)) / pdu::OSPFv3(pp);
 	if (!pkt.dst_addr().is_multicast()) {
+		logger->trace("Using L3 sending on interface {}.", Tins::NetworkInterface(pkt.src_addr()).name());
 		sender.send(pkt, pkt.src_addr());
 	} else {
 		Tins::NetworkInterface intf = pkt.src_addr();
@@ -156,6 +161,22 @@ void parser::OSPFv3Packet::transmit() const {
 		
 		auto e = Tins::EthernetII(bcmac, intf.hw_address()) / pkt;
 		e.payload_type(Tins::Constants::Ethernet::IPV6);
+		
+		logger->trace("Using L2 sending with MAC {} and interface {}.", bcmac.to_string(), intf.name());
 		sender.send(e, intf);
+	}
+}
+
+void parser::OSPFv3Packet::setSourceFromDest() {
+	if (dest == 0)
+		throw MalformedPacketException("Can't set source from missing dest.");
+	
+	auto ip = tinshelper::raw_to_tins(dest);
+	Tins::NetworkInterface intf = ip;
+	for (auto &i : intf.ipv6_addresses()) {
+		if (i.address.is_loopback()) {
+			source = tinshelper::tins_to_raw(i.address);
+			return;
+		}
 	}
 }
