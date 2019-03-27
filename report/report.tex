@@ -1,19 +1,158 @@
-%%
-%% Author: rewbycraft
-%% 3/24/19
-%%
+\documentclass[11pt,a4paper,oneside]{article}
 
-% Preamble
-\documentclass[11pt]{article}
+\newcommand{\ftitle}{OSPFv3 Routing Attack}
+\newcommand{\fauthor}{
+    Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
+}
+\newcommand{\coursecode}{2IC80}
+\newcommand{\coursename}{Lab Offensive Computer Security}
+\newcommand{\footertitle}{2WF80 - Homework Set 2}
+\newcommand{\preamble}{}
 
-% Packages
+
+\usepackage[includeheadfoot,top=0.5in,bottom=0.5in]{geometry}
+\usepackage{mathtools}
+\usepackage[T1]{fontenc}
+\usepackage[normalem]{ulem}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{xparse}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{tabularx}
+\usepackage{calc}
 \usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{hhline}          % For using double lines in tables
+\usepackage{multido}         % For using multido
+\usepackage{graphicx}        % For using pictures
+\usepackage{float}
 
-% Document
+\pagestyle{fancy}
+\renewcommand{\sectionmark}[1]{\markright{#1}}
+\fancyhf{}
+\lhead{{\textsc{\fancyplain{}{\rightmark }}}}
+\rhead{{\raisebox{-0.30\height}{\includegraphics[height=20pt]{tuelogo.pdf}}}}
+\cfoot{{\thepage}}
+\lfoot{{\fauthor}}
+\rfoot{{\textsc{\coursecode { -} \ftitle}}}
+\renewcommand\headrulewidth{1pt}
+\renewcommand\footrulewidth{1pt}
+\setlength{\headheight}{26pt}
+\setlength{\headsep}{0.75in}
+\addtolength{\footskip}{0.50in}
+\addtolength{\textheight}{-1.25in}
+
+\fancyheadoffset{0.5in}
+\fancyfootoffset{0.5in}
+\newcommand{\longdiv}[2]{$\strut#1$\kern.25em\smash{\raise.3ex\hbox{$\big)$}}$\mkern-8mu\overline{\enspace\strut#2}$}
+\newcommand{\tab}[1][1]{\leavevmode{\parindent=#1em\indent}}
+
+\fancypagestyle{plain} {
+    \fancyhf{}
+    \lhead{{\textsc{\fancyplain{}{\rightmark }}}}
+    \rhead{{\raisebox{-0.30\height}{\includegraphics[height=20pt]{tuelogo.pdf}}}}
+    \cfoot{{\thepage}}
+    \lfoot{{\fauthor}}
+    \rfoot{{\textsc{\coursecode { -} \ftitle}}}
+    \renewcommand\headrulewidth{1pt}
+    \renewcommand\footrulewidth{1pt}
+    \setlength{\headheight}{26pt}
+    \setlength{\headsep}{0.75in}
+    \addtolength{\footskip}{0.50in}
+    \addtolength{\textheight}{-1.25in}
+    
+    \fancyheadoffset{0.5in}
+    \fancyfootoffset{0.5in}
+}
+
+
+\newcommand{\headrulecolour}{0.823529412,0.125490196,0.384313725}
+\let\oldheadrule\headrule
+\renewcommand{\headrule}{{\color[rgb]{\headrulecolour}\oldheadrule}}
+
+\preamble
+
+\newcommand{\ssection}[1]{\section*{#1}\markright{#1}}
+
+\title{\ftitle\\\coursecode { -} \coursename}
+\author{\fauthor}
+
+
 \begin{document}
+    \maketitle\thispagestyle{fancy}
+    \newpage
+    \tableofcontents
+    \newpage
+    
+    
+    \section{Introduction}
+    		%Why interesting to do technical challenging, what do we need?
+    	
+    \section{Scenario}
+    		Gentco is one of the leading manufacturers of dashing Bowler Hats. Recently the price of unique, high quality Swiss leather that \textit{Gentco} relies on to make their most popular hat has gone up.\\
+    		Management at \textit{Gentco} believes that their competitor, \textit{Dapper Inc.}, has been bribing \textit{Gentco}'s exclusive supplier in order to raise prices for Gentco. This would be in direct violation of the contract Gentco has with the supplier. Gentco management is reluctant to make such a direct claim without proof since, if they are wrong, this could deteriate the relationship even further.\\
+    		That's why they want us to obtain proof of this. To do so, they want us to investigate \textit{Dapper Inc.} and figure out if they are indeed paying off \textit{Gentco}'s supplier.\\
+    		We started off by obtaining a dump of \textit{Dapper Inc.}'s DNS records. One of the system admins had forgotten to disable zone transfers, so these were easily obtainable.\\
+    		By looking at these records we discovered that \textit{Dapper Inc.} runs a very modern network, where everything uses IPv6. Undeterred, we started scanning the systems we discovered in the DNS dump. The networking team at \textit{Dapper Inc.} has the fortress locked up quite tight, but htey made one mistake. One of their core routers' management interfaces isn't firewalled off.\\
+    		The SSH deamon's banner reveals that \textit{Dapper Inc.} uses some of the latest routers byso \textit{ACME Networks} Recently it was discovered that this vendor includes a hardcoded backdoor account with full privileges in all their routers. Using this account, we gained full access to this core router.\\
+    		Now that we've got a foothold in their network, we need to obtain information. This router uses a Linux based OS assisted by application specific integrated circuits for high performance routing. This presents a problem. We cannot see the traffic passing through the router. The hardware is, however, capable of terminating GRE based tunnels and treating them as if they are physical ports. We also were able to perform some network reconnaisance and obtain a wealth of information about the structure of \textit{Dapper Inc.}'s network. This information is presented in \textit{Section \ref{Environment}}. Sadly, the rest of the network is secured quite well and we are unable to move beyond the router we are currently occupying.\\
+    		While investigating \textit{Dapper Inc.}'s network, we discovered a recent blog post by \textit{Example Corp}, the makers of a \textit{Software as a Service} accounting application. They published a case study detailing how their AI-powered analytics helped \textit{Dapper Inc.} save several million dollars. It turns out that, although they seem to care a lot about their AI technology, they do not care about security. They aren't even using HTTPS! In other words: a golden oppertunity.\\
+    		The plan is simple: If we can hijack \textit{Example Corp}'s /48 inside of \textit{Dapper Inc.}'s network and re-route it to a server under our control, we can capture the passwords of \textit{Dapper Inc.}'s accountants and confirm or deny that \textit{Dapper Inc.} is paying \textit{Gentco}' s supplier by accessing \textit{Dapper Inc's} financial reconds.
+    		
+    \section{Environment}\label{Environment}
+    		
+    \section{Objectives}\label{Objectives}
+		The main objective is to spy on and redirect traffic in \textit{Dapper Inc.}'s network. To achieve this, we assume the following case:
+		\begin{itemize}
+			\item Full control over router C2 (see Section \label{Environment}).
+			\item Method exploits OSPFv3 to re-route traffic to \textit{Example Corp} from the \textit{Accounting Dept.} via C2.
+			\item Send traffic destined for \textit{Example Corp} to an attacker-controlled server.
+			\item This server has been connected via a GRE tunnel to C2.
+		\end{itemize}
+		
+    	\section{Method}
+	    \subsection{Protocol}\label{OSPFv3 Protocol}
+	    		Before coding up an attack, we must first understand the protocol and discover where it's weaknesses and strengths are. The results of this orientative phase are documented in our wiki \cite{wiki}.\\
+	    		TODO:
+	    		- Brief description of OSPF (type of packets, 
+	    		
+	    		
+    		\subsection{Parser}\label{Parser}
+	    		In contrast to OSPv2, OSPv3 does not yet have an open-source project which allowed us to parse OSPFv3 packets, recalculate the needed checksums, or change non-used fields to forge a pre-determined checksum. Therefore, we had to write our own parser which parse incomming packets, craete outgoing packets and do the desired checksum calculations.
+	    		TODO:
+	    		- Brief description of the setup of the parser.
+    			
+    		\subsection{Attack execution}\label{Attack_exec}
+    			Using the \textit{Link State Update} (LSU) packets we can change the weights of any link. However, OSPF has a nasty fightback mechanism which will directly repair the original weight. To prevent this, we can send an additional LS packet. This packet is exactly the same as the generated fightback packet except for the weight, the checksum in the OSPF main header, and some unused parts of the LS header. Note that the checksum in the LS header remains the same, which is nessecary for the next step.\\
+    			Two LS packets are regarded equal when the sequence number, the checksum and the age are equal. Therefore, if our packet arives earlier, then the packet generated by the fightback will be discarded.\\
+    			
+    			
+    \section{Discussion}\label{Discussion}
+    		
+    \section{Results}\label{Results}
+    		
+    
+    
+    %%%%%%%% References %%%%%%%%
+    \begin{thebibliography}{999}
+\bibitem{ref}
+author,
+title,
+publisher,
+Country e.d.
+edition,
+date
 
-    \title{Report}
-    \maketitle
+\bibitem{wiki}
+R.Wichertjes \& K.Wortel,
+link: \url{https://github.com/rewbycraft/OSPFv3DisguisedLSA/wiki},
+OSPFv3 Protocol Wiki
+
+
+
+    \end{thebibliography}
 
 
 \end{document}

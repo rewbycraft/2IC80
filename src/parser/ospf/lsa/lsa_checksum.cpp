@@ -17,8 +17,11 @@ std::pair<int, int> revertPartLSAChecksum(const uint16_t& checksum, std::size_t 
 	int alpha = int(size) - 17;
 	int beta = int(size) - 16;
 
-	int c0 = -x - y;
-	int c1 = -beta*x - alpha*y;
+	int c0 = (-x - y) % 255;
+	if (c0 < 0) c0 += 255;
+	int c1 = (-beta*x - alpha*y) % 255;
+	if (c1 < 0) c0 += 255;
+
 	return { c0, c1 };
 }
 
