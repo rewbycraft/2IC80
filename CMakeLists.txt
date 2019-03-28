@@ -92,5 +92,6 @@ if(PACKAGE_TESTS)
     package_add_test(endiantest tests/endiantest.cpp)
     package_add_test(parsertest tests/parsertest.cpp)
     package_add_test(utiltest tests/utiltest.cpp)
+    package_add_test(checksumtest tests/checksumtest.cpp)
 endif()
 
