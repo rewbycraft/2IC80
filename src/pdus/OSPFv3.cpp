@@ -16,7 +16,7 @@ uint32_t pdu::OSPFv3::header_size() const {
 }
 
 uint32_t pdu::OSPFv3::size() const {
-	return static_cast<uint32_t>(packet.serialize().size());
+	return static_cast<uint32_t>(packet->serialize().size());
 }
 
 Tins::PDU *pdu::OSPFv3::clone() const {
@@ -28,29 +28,29 @@ Tins::PDU::PDUType pdu::OSPFv3::pdu_type() const {
 }
 
 void pdu::OSPFv3::write_serialization(uint8_t *buffer, uint32_t total_sz) {
-	parser::bytevector result = packet.serialize();
+	parser::bytevector result = packet->serialize();
 	if (result.size() > total_sz)
 		throw parser::MalformedPacketException("Unable to write serialization. Buffer too small.");
 	memcpy(buffer, result.data(), result.size());
 }
 
-pdu::OSPFv3::OSPFv3(const uint8_t *data, uint32_t sz) : packet(parser::bytevector(data, data + sz)) {
+pdu::OSPFv3::OSPFv3(const uint8_t *data, uint32_t sz) : packet(std::make_shared<parser::OSPFv3Packet>(parser::bytevector(data, data + sz))) {
 }
 
 pdu::OSPFv3::OSPFv3() : PDU() {
 
 }
 
-const parser::OSPFv3Packet &pdu::OSPFv3::getPacket() const {
+const std::shared_ptr<parser::OSPFv3Packet> pdu::OSPFv3::getPacket() const {
 	return packet;
 }
 
 void pdu::OSPFv3::updateValues(const Tins::IPv6 &pdu) {
-	packet.setDest(tinshelper::tins_to_raw(pdu.dst_addr()));
-	packet.setSource(tinshelper::tins_to_raw(pdu.src_addr()));
-	packet.updateValues();
+	packet->setDest(tinshelper::tins_to_raw(pdu.dst_addr()));
+	packet->setSource(tinshelper::tins_to_raw(pdu.src_addr()));
+	packet->updateValues();
 }
 
-pdu::OSPFv3::OSPFv3(parser::OSPFv3Packet packet) : packet(std::move(packet)) {
+pdu::OSPFv3::OSPFv3(const std::shared_ptr<parser::OSPFv3Packet> &packet) : packet(packet) {
 
 }

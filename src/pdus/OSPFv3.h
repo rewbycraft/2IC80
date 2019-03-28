@@ -12,7 +12,7 @@ using namespace Tins;
 
 namespace pdu {
 	class OSPFv3 : public Tins::PDU {
-		parser::OSPFv3Packet packet;
+		std::shared_ptr<parser::OSPFv3Packet> packet;
 	public:
 		static const PDU::PDUType pdu_flag;
 		
@@ -20,7 +20,7 @@ namespace pdu {
 		
 		OSPFv3();
 		
-		OSPFv3(parser::OSPFv3Packet packet);
+		OSPFv3(const std::shared_ptr<parser::OSPFv3Packet> &packet);
 		
 		uint32_t header_size() const override;
 		
@@ -30,7 +30,7 @@ namespace pdu {
 		
 		uint32_t size() const;
 		
-		const parser::OSPFv3Packet &getPacket() const;
+		const std::shared_ptr<parser::OSPFv3Packet> getPacket() const;
 		
 		void updateValues(const Tins::IPv6 &pdu);
 	

@@ -12,7 +12,7 @@
 #include <boost/fusion/include/adapt_struct.hpp>
 
 namespace parser {
-	class OSPFv3Packet : public Packet {
+	class OSPFv3Packet : public Packet, public std::enable_shared_from_this<OSPFv3Packet> {
 	public:
 		enum Type : uint8_t { HELLO = 1, DATABASE_DESCRIPTION = 2, LINK_STATE_REQUEST = 3, LINK_STATE_UPDATE = 4, LINK_STATE_ACK = 5 };
 		static_assert(sizeof(Type) == sizeof(uint8_t), "Type is not 8 bits in size.");
@@ -60,6 +60,8 @@ namespace parser {
 		uint128_t getDest() const;
 		
 		void setDest(uint128_t dest);
+		
+		void setSourceFromDest();
 		
 		void transmit() const;
 	};
