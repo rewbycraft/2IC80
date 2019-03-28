@@ -7,9 +7,10 @@
 
 #include "LSAPacket.h"
 #include "PrefixLSAPacket.h"
+#include "ChecksumInterface.h"
 
 namespace parser {
-	class LinkLSAPacket : public parser::Packet {
+class LinkLSAPacket : public parser::Packet, parser::ChecksumInterface {
 	public:
 		typedef struct {
 			uint32_t _options;
@@ -37,7 +38,9 @@ namespace parser {
 		void setPrefixes(const std::vector<std::shared_ptr<PrefixLSAPacket>> &prefixes);
 		
 		void updateValues() override;
-	};
+
+    	std::vector<size_t> getEmptyByteIndices() override;
+    };
 }
 
 BOOST_FUSION_ADAPT_STRUCT(parser::LinkLSAPacket::Header, (uint32_t, _options), (uint128_t, lladdr), (uint32_t, num_prefixes))

@@ -6,9 +6,10 @@
 #define ATTACK_PREFIXLSAPACKET_H
 
 #include "LSAPacket.h"
+#include "ChecksumInterface.h"
 
 namespace parser {
-	class PrefixLSAPacket : public Packet {
+class PrefixLSAPacket : public Packet, public ChecksumInterface {
 	public:
 		typedef struct {
 			uint8_t length;
@@ -32,6 +33,8 @@ namespace parser {
 		void toString(const std::function<void(const std::string &)> &printer) const override;
 		
 		void updateValues() override;
+
+		std::vector<size_t> getEmptyByteIndices() override;
 	};
 	
 	std::pair<std::shared_ptr<PrefixLSAPacket>, const bytevector> extractPrefix(const bytevector& input);

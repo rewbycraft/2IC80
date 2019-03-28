@@ -6,9 +6,10 @@
 #define ATTACK_ROUTERLSAPACKET_H
 
 #include "LSAPacket.h"
+#include "ChecksumInterface.h"
 
 namespace parser {
-	class RouterLSAPacket : public Packet {
+	class RouterLSAPacket : public Packet, public ChecksumInterface {
 	public:
 		typedef struct {
 			uint32_t options;
@@ -42,6 +43,8 @@ namespace parser {
 		void toString(const std::function<void(const std::string &)> &printer) const override;
 		
 		void updateValues() override;
+
+		std::vector<size_t> getEmptyByteIndices() override;
 	};
 }
 
