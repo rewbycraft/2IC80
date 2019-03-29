@@ -119,9 +119,29 @@ void parser::LSAPacket::updateValues() {
 }
 
 void parser::LSAPacket::updateChecksum() {
-    //uint16_t age = header.age;
-    //header.age = 0;
-    //header.checksum = 0;
+    uint16_t age = header.age;
+    header.age = 0;
+    header.checksum = 0;
     header.checksum = parser::checksum::lsa::calcChecksum(this->serialize());
-    //header.age = age;
+    header.age = age;
+}
+
+std::optional<parser::LSAPacket> parser::LSAPacket::modToChecksum(uint16_t targetChecksum) {
+	std::vector<std::size_t> targetIndices =
+			std::dynamic_pointer_cast<parser::ChecksumInterface>(subpacket)->getEmptyByteIndices();
+	for (std::size_t i = 0; i < targetIndices.size(); i++) {
+		targetIndices[i] += 20;
+	}
+	auto serialized = this->serialize();
+	auto rtn = parser::checksum::lsa::modifyChecksum(serialized, targetIndices, targetChecksum);
+	if (rtn) {
+		for (auto pair : *rtn) {
+			serialized[pair.second] = pair.first;
+		}
+
+		return LSAPacket(serialized);
+
+	} else {
+		return std::nullopt;
+	}
 }

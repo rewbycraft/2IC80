@@ -68,3 +68,7 @@ void parser::RouterLSAPacket::toString(const std::function<void(const std::strin
 void parser::RouterLSAPacket::updateValues() {
 
 }
+
+std::vector<std::size_t> parser::RouterLSAPacket::getEmptyByteIndices() {
+	return std::vector<std::size_t>{1, 5};
+}

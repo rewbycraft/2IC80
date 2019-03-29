@@ -87,7 +87,7 @@ std::optional<std::vector<std::pair<std::uint8_t, std::size_t>>> parser::checksu
 	// Determine which fields are allowed to be changed.
 	std::vector<std::pair<uint8_t, size_t>> targets;
 	for (std::size_t i : targetIndices) {
-		targets.push_back({data[i], i});
+		targets.emplace_back(data[i], i);
 	}
 
 	// Determine the amount c0 and c1 were changed.

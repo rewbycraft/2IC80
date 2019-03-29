@@ -5,6 +5,8 @@
 #include <tins/ip_address.h>
 #include "IntraAreaPrefixLSAPacket.h"
 #include "../../../util.h"
+#include <vector>
+
 
 parser::IntraAreaPrefixLSAPacket::IntraAreaPrefixLSAPacket() {}
 
@@ -70,4 +72,18 @@ void parser::IntraAreaPrefixLSAPacket::updateValues() {
 	for (auto& packet : prefixes) {
 		packet->updateValues();
 	}
+}
+
+std::vector<std::size_t> parser::IntraAreaPrefixLSAPacket::getEmptyByteIndices() {
+	std::vector<std::size_t> indices;
+
+	int begin = 12;
+	for (auto& prefix : prefixes) {
+		std::vector<std::size_t> childIndices = prefix->getEmptyByteIndices();
+		for (auto j : childIndices) {
+			indices.push_back(begin + j);
+		}
+		begin += prefix->serialize().size();
+	}
+	return indices;
 }

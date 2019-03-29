@@ -61,6 +61,17 @@ private:
 		 * Calculates and updates the checksum of this message.
 		 */
 		void updateChecksum();
+
+		/**
+		 * Modifies the packet such that the checksum will be equal to the given value.
+		 *
+		 * @param targetChecksum the checksum to obtain
+		 * @return a new {@code LSAPacket} of which all fields except the
+		 *     target fields are equal to the source packet, and the
+		 *     checksum is equal to {@code targetChecksum}.
+		 */
+        std::optional<parser::LSAPacket> modToChecksum(uint16_t targetChecksum);
+
 	};
 }
 

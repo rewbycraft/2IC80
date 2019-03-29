@@ -4,6 +4,7 @@
 
 #include "ASExternalLSAPacket.h"
 #include "../../../util.h"
+#include <vector>
 
 parser::ASExternalLSAPacket::ASExternalLSAPacket() : Packet() {
 
@@ -79,4 +80,15 @@ void parser::ASExternalLSAPacket::setPrefix(const std::shared_ptr<parser::Prefix
 
 void parser::ASExternalLSAPacket::updateValues() {
 	prefix->updateValues();
+}
+
+std::vector<std::size_t> parser::ASExternalLSAPacket::getEmptyByteIndices() {
+	std::vector<std::size_t> indices;
+
+	int begin = 4;
+	for (auto j : prefix->getEmptyByteIndices()) {
+		indices.push_back(begin + j);
+	}
+
+	return indices;
 }

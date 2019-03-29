@@ -22,7 +22,7 @@ parser::LinkLSAPacket::LinkLSAPacket(const parser::bytevector &data) : Packet(da
 			throw MalformedPacketException("Too many prefixes.");
 	}
 	
-	if (prefixes.size() !=header.num_prefixes)
+	if (prefixes.size() != header.num_prefixes)
 		throw MalformedPacketException("Wrong amount of prefixes.");
 }
 
@@ -72,3 +72,20 @@ void parser::LinkLSAPacket::updateValues() {
 		prefix->updateValues();
 	}
 }
+
+std::vector<size_t> parser::LinkLSAPacket::getEmptyByteIndices() {
+	std::vector<std::size_t> indices;
+	indices.push_back(1);
+
+	int begin = 24;
+	for (auto& prefix : prefixes) {
+		std::vector<std::size_t> childIndices = prefix->getEmptyByteIndices();
+		for (auto j : childIndices) {
+			indices.push_back(begin + j);
+		}
+		begin += prefix->serialize().size();
+	}
+
+	return indices;
+}
+

@@ -7,9 +7,10 @@
 
 #include "LSAPacket.h"
 #include "PrefixLSAPacket.h"
+#include "ChecksumInterface.h"
 
 namespace parser {
-	class IntraAreaPrefixLSAPacket : public parser::Packet {
+	class IntraAreaPrefixLSAPacket : public Packet, public ChecksumInterface {
 	public:
 		typedef struct {
 			uint16_t num_prefixes;
@@ -38,6 +39,8 @@ namespace parser {
 		void setPrefixes(const std::vector<std::shared_ptr<PrefixLSAPacket>> &prefixes);
 		
 		void updateValues() override;
+
+        std::vector<size_t> getEmptyByteIndices() override;
 	};
 }
 
