@@ -70,7 +70,7 @@ private:
 		 *     target fields are equal to the source packet, and the
 		 *     checksum is equal to {@code targetChecksum}.
 		 */
-        std::optional<parser::LSAPacket> modToChecksum(uint16_t targetChecksum);
+        const std::optional<std::shared_ptr<LSAPacket>> modToChecksum(uint16_t targetChecksum);
 
 	};
 }

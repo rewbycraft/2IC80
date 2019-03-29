@@ -12,6 +12,7 @@
 #include "ASExternalLSAPacket.h"
 #include "lsa_checksum.h"
 
+
 parser::LSAPacket::LSAPacket() : Packet() {
 
 }
@@ -126,7 +127,7 @@ void parser::LSAPacket::updateChecksum() {
     header.age = age;
 }
 
-std::optional<parser::LSAPacket> parser::LSAPacket::modToChecksum(uint16_t targetChecksum) {
+const std::optional<std::shared_ptr<parser::LSAPacket>> parser::LSAPacket::modToChecksum(uint16_t targetChecksum) {
 	std::vector<std::size_t> targetIndices =
 			std::dynamic_pointer_cast<parser::ChecksumInterface>(subpacket)->getEmptyByteIndices();
 	for (std::size_t i = 0; i < targetIndices.size(); i++) {
@@ -134,14 +135,13 @@ std::optional<parser::LSAPacket> parser::LSAPacket::modToChecksum(uint16_t targe
 	}
 	auto serialized = this->serialize();
 	auto rtn = parser::checksum::lsa::modifyChecksum(serialized, targetIndices, targetChecksum);
-	if (rtn) {
-		for (auto pair : *rtn) {
-			serialized[pair.second] = pair.first;
-		}
-
-		return LSAPacket(serialized);
-
-	} else {
+	if (!rtn) {
 		return std::nullopt;
 	}
+
+	for (auto pair : *rtn) {
+		serialized[pair.second] = pair.first;
+	}
+
+	return { std::make_shared<LSAPacket>(serialized) };
 }

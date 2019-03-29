@@ -18,26 +18,30 @@ TEST(checksumtest, recalcChecksumTest01) {
     packet.setDest(std::make_uint128(18338657682652659712u,8940765662646544802u));
     packet.updateValues();
 
-    std::shared_ptr<parser::LinkStateUpdatePacket> lsu = std::dynamic_pointer_cast<parser::LinkStateUpdatePacket>(packet.getSubpacket());
-    std::shared_ptr<parser::LSAPacket> lsa = lsu->getLsas()[1];
+    std::optional<std::shared_ptr<parser::LSAPacket>> newPacket = std::nullopt;
+    std::shared_ptr<parser::LinkStateUpdatePacket> lsu = std::dynamic_pointer_cast<parser::LinkStateUpdatePacket>(
+            packet.getSubpacket());
+    std::vector<std::shared_ptr<parser::LSAPacket>> lsas = lsu-> getLsas();
+    std::shared_ptr<parser::LSAPacket> lsa = lsas[1];
     const uint16_t oldChecksum = lsa->getHeader().checksum;
-    std::shared_ptr<parser::IntraAreaPrefixLSAPacket> iapLSA = std::dynamic_pointer_cast<parser::IntraAreaPrefixLSAPacket>(lsa->getSubpacket());
-    std::shared_ptr<parser::PrefixLSAPacket> prefixLSA = std::dynamic_pointer_cast<parser::PrefixLSAPacket>(iapLSA->getPrefixes()[0]);
-    const parser::PrefixLSAPacket::Header& origHeader = prefixLSA->getHeader();
-    const parser::PrefixLSAPacket::Header newHeader = {
-            origHeader.length, origHeader.options, uint16_t(0xfffd), origHeader.address
-    };
-    prefixLSA->setHeader(newHeader);
-    auto newPacket = lsa->modToChecksum(oldChecksum);
-    if (newPacket) {
-        std::shared_ptr<parser::LSAPacket> packetPtr(&*newPacket);
-        packet.setSubpacket(packetPtr);
-    } else {
-        EXPECT_TRUE(false);
+    std::shared_ptr<parser::IntraAreaPrefixLSAPacket> iapLSA = std::dynamic_pointer_cast<parser::IntraAreaPrefixLSAPacket>(
+            lsa->getSubpacket());
+    std::shared_ptr<parser::PrefixLSAPacket> prefixLSA = std::dynamic_pointer_cast<parser::PrefixLSAPacket>(
+            iapLSA->getPrefixes()[0]);
+    const parser::PrefixLSAPacket::Header &origHeader = prefixLSA->getHeader();
+
+    for (std::uint16_t metric = 0x0; !newPacket; metric++) {
+        const parser::PrefixLSAPacket::Header newHeader = {
+                origHeader.length, origHeader.options, uint16_t(metric), origHeader.address
+        };
+        prefixLSA->setHeader(newHeader);
+        newPacket = lsa->modToChecksum(oldChecksum);
+        int i = 0;
     }
 
+    lsas[1] = newPacket.value();
     packet.updateValues();
-    const uint16_t newChecksum = lsa->getHeader().checksum;
+    const uint16_t newChecksum = newPacket.value()->getHeader().checksum;
 
     EXPECT_EQ(oldChecksum, newChecksum);
 }
