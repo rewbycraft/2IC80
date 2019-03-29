@@ -5,8 +5,6 @@
 #include <tins/constants.h>
 #include <spdlog/spdlog.h>
 #include "OSPFv3Packet.h"
-#include "../MalformedPacketException.h"
-#include "../internal.h"
 #include "HelloPacket.h"
 #include "DatabaseDescriptionPacket.h"
 #include "LinkStateRequestPacket.h"
@@ -16,15 +14,16 @@
 #include "ospf_checksum.h"
 #include "../../tinshelper.h"
 #include "../../pdus/OSPFv3.h"
+#include "../../neighborscan.h"
 
 parser::OSPFv3Packet::OSPFv3Packet() : Packet() {
 
 }
 
-parser::OSPFv3Packet::OSPFv3Packet(const parser::bytevector& data) : Packet(data) {
+parser::OSPFv3Packet::OSPFv3Packet(const parser::bytevector &data) : Packet(data) {
 	const parser::bytevector sub = parser::deserializeObject(header, data);
 	
-	switch(header.type) {
+	switch (header.type) {
 		case HELLO:
 			subpacket = std::make_shared<parser::HelloPacket>(sub);
 			break;
@@ -58,7 +57,7 @@ const parser::bytevector parser::OSPFv3Packet::serialize() const {
 		auto subpacketVector = subpacket->serialize();
 		result.insert(result.end(), subpacketVector.begin(), subpacketVector.end());
 	}
-
+	
 	return result;
 }
 
@@ -82,7 +81,7 @@ void parser::OSPFv3Packet::recomputeChecksum(const Tins::IPv6 &) {
 
 }
 
-void parser::OSPFv3Packet::toString(const std::function<void(const std::string&)>& printer) const {
+void parser::OSPFv3Packet::toString(const std::function<void(const std::string &)> &printer) const {
 	printer("== OSPFv3 Header ==");
 	printer("Version: " + std::to_string(header.version));
 	printer("Type: " + std::to_string(header.type));
@@ -111,14 +110,14 @@ void parser::OSPFv3Packet::updateValues() {
 		subpacket->updateValues();
 		header.packet_length += subpacket->serialize().size();
 	}
-
+	
 	if (dest != 0 && source != 0) {
 		header.checksum = 0;
 		header.checksum = parser::checksum::ospf::calcChecksum(
-				parser::byteswap(source),
-				parser::byteswap(dest),
-				parser::byteswap(std::uint32_t(header.packet_length)),
-				serialize());
+			parser::byteswap(source),
+			parser::byteswap(dest),
+			parser::byteswap(std::uint32_t(header.packet_length)),
+			serialize());
 	}
 }
 
@@ -148,21 +147,29 @@ void parser::OSPFv3Packet::transmit() const {
 	Tins::PacketSender sender;
 	std::shared_ptr<parser::OSPFv3Packet> pp = std::make_shared<parser::OSPFv3Packet>(*this);
 	Tins::IPv6 pkt = Tins::IPv6(tinshelper::raw_to_tins(dest), tinshelper::raw_to_tins(source)) / pdu::OSPFv3(pp);
-	if (!pkt.dst_addr().is_multicast()) {
+	bool is_ll = (*pkt.dst_addr().begin() == 0xfe) && (*(pkt.dst_addr().begin()+1) == 0x80);
+	if (!pkt.dst_addr().is_multicast() && !is_ll) {
 		logger->trace("Using L3 sending on interface {}.", Tins::NetworkInterface(pkt.src_addr()).name());
 		sender.send(pkt, pkt.src_addr());
 	} else {
 		Tins::NetworkInterface intf = pkt.src_addr();
 		
-		Tins::HWAddress<6> bcmac("33:33:00:00:00:00");
-		for (int i = 0; i < 4; i++) {
-			bcmac.begin()[5-i] |= pkt.dst_addr().begin()[15-i];
+		Tins::HWAddress<6> mac;
+		if (pkt.dst_addr().is_multicast()) {
+			mac = "33:33:00:00:00:00";
+			for (int i = 0; i < 4; i++) {
+				mac.begin()[5 - i] |= pkt.dst_addr().begin()[15 - i];
+			}
 		}
 		
-		auto e = Tins::EthernetII(bcmac, intf.hw_address()) / pkt;
+		if (is_ll) {
+			mac = neighborscan::getInterfaceForNeighbor(pkt.dst_addr()).hw_address();
+		}
+		
+		auto e = Tins::EthernetII(mac, intf.hw_address()) / pkt;
 		e.payload_type(Tins::Constants::Ethernet::IPV6);
 		
-		logger->trace("Using L2 sending with MAC {} and interface {}.", bcmac.to_string(), intf.name());
+		logger->trace("Using L2 sending with MAC {} and interface {}.", mac.to_string(), intf.name());
 		sender.send(e, intf);
 	}
 }
@@ -172,11 +179,5 @@ void parser::OSPFv3Packet::setSourceFromDest() {
 		throw MalformedPacketException("Can't set source from missing dest.");
 	
 	auto ip = tinshelper::raw_to_tins(dest);
-	Tins::NetworkInterface intf = ip;
-	for (auto &i : intf.ipv6_addresses()) {
-		if (i.address.is_loopback()) {
-			source = tinshelper::tins_to_raw(i.address);
-			return;
-		}
-	}
+	setSource(tinshelper::tins_to_raw(neighborscan::getSourceForNeighbor(ip)));
 }

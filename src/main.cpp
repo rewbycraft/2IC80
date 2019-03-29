@@ -2,24 +2,21 @@
 #include "pdus/OSPFv3.h"
 #include "../spdlog/include/spdlog/sinks/stdout_color_sinks.h"
 #include "netns.h"
-#include "tinshelper.h"
 #include "statemachine.h"
 #include <boost/program_options.hpp>
+#include "neighborscan.h"
 
 using namespace Tins;
 
 bool processPacket(const PDU &pdu) {
 	auto logger = spdlog::get("capture");
 	
-	const EthernetII &eth = pdu.rfind_pdu<EthernetII>();
-	const IPv6 &ip = eth.rfind_pdu<IPv6>();
+	const IPv6 &ip = pdu.rfind_pdu<IPv6>();
 	auto ospf = ip.rfind_pdu<pdu::OSPFv3>();
 	ospf.updateValues(ip);
-
-	logger->trace("Ethernet: {} -> {}", eth.src_addr().to_string(), eth.dst_addr().to_string());
+	
 	logger->trace("IP:       {} -> {}", ip.src_addr().to_string(), ip.dst_addr().to_string());
 	logger->trace(ospf.getPacket()->Packet::toString());
-	
 	
 	statemachine::onPacket(ospf.getPacket());
 	
@@ -31,7 +28,9 @@ int attack_main(int argc, char *argv[]) {
 	desc.add_options()
 		("help,h", "Help")
 		("netns,n", boost::program_options::value<std::string>(), "Execute in this network namespace.")
-		("log,l", boost::program_options::value<typename std::underlying_type<spdlog::level::level_enum>::type>()->default_value(spdlog::level::info), "Loglevel")
+		("log,l",
+		 boost::program_options::value<typename std::underlying_type<spdlog::level::level_enum>::type>()->default_value(
+			 spdlog::level::info), "Loglevel")
 		("self,s", boost::program_options::value<std::string>()->default_value("1.1.2.2"), "Who am I?");
 	
 	boost::program_options::variables_map vm;
@@ -39,9 +38,10 @@ int attack_main(int argc, char *argv[]) {
 	boost::program_options::notify(vm);
 	
 	//Create spdloggers
-	for (auto &s : {"main", "netns", "statemachine", "capture", "transmit"}) {
+	for (auto &s : {"main", "netns", "statemachine", "capture", "transmit", "neighbor"}) {
 		auto l = spdlog::stdout_color_mt(s);
-		l->set_level(static_cast<spdlog::level::level_enum>(vm["log"].as<typename std::underlying_type<spdlog::level::level_enum>::type>()));
+		l->set_level(
+			static_cast<spdlog::level::level_enum>(vm["log"].as<typename std::underlying_type<spdlog::level::level_enum>::type>()));
 	}
 	
 	auto logger = spdlog::get("main");
@@ -56,6 +56,8 @@ int attack_main(int argc, char *argv[]) {
 	if (vm.count("netns")) {
 		netns::enter(vm["netns"].as<std::string>());
 	}
+	
+	neighborscan::discoverNeighbors();
 	
 	statemachine::init(parser::byteswap<uint32_t>(Tins::IPv4Address(vm["self"].as<std::string>())), {});
 	

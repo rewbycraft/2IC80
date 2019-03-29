@@ -1,5 +1,7 @@
 #include <utility>
 
+#include <utility>
+
 //
 // Created by rewbycraft on 3/25/19.
 //
@@ -27,8 +29,8 @@ namespace statemachine {
 			
 			Init() = delete;
 			Init(const uint32_t self,
-			     const std::vector<std::tuple<uint32_t, uint32_t, uint16_t>> &targets)
-				: self(self), targets(targets) {}
+			     std::vector<std::tuple<uint32_t, uint32_t, uint16_t>> targets)
+				: self(self), targets(std::move(targets)) {}
 		};
 		
 		struct Packet : sc::event<Packet> {
@@ -80,8 +82,14 @@ namespace statemachine {
 				if (packet.packet->getHeader().type != parser::OSPFv3Packet::HELLO)
 					return forward_event();
 				
+				//We're not our own neighbor.
 				if (packet.packet->getHeader().router_id == context<Machine>().self)
 					return forward_event();
+				
+				//Don't use one of the targets as a neighbor.
+				for (auto const& [a, b, metric] : context<Machine>().targets)
+					if (a == packet.packet->getHeader().router_id || b == packet.packet->getHeader().router_id)
+						return forward_event();
 				
 				context<Machine>().neighbor_hello = packet.packet;
 				
