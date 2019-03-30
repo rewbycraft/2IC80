@@ -49,6 +49,12 @@
 \newcommand{\longdiv}[2]{$\strut#1$\kern.25em\smash{\raise.3ex\hbox{$\big)$}}$\mkern-8mu\overline{\enspace\strut#2}$}
 \newcommand{\tab}[1][1]{\leavevmode{\parindent=#1em\indent}}
 
+% Commands to directly create sections with custom labels
+\newcommand{\lsection}[2]{\section{#1}\label{sec:#2}}
+\newcommand{\lsubsection}[2]{\subsection{#1}\label{sec:#2}}
+\newcommand{\lsubsubsection}[2]{\subsubsection{#1}\label{sec:#2}}
+
+
 \fancypagestyle{plain} {
     \fancyhf{}
     \lhead{{\textsc{\fancyplain{}{\rightmark }}}}
@@ -76,6 +82,7 @@
 
 \newcommand{\ssection}[1]{\section*{#1}\markright{#1}}
 
+
 \title{\ftitle\\\coursecode { -} \coursename}
 \author{\fauthor}
 
@@ -87,51 +94,115 @@
     \newpage
     
     
-    \section{Introduction}
+    \lsection{Introduction}{intro}
     		%Why interesting to do technical challenging, what do we need?
     	
-    \section{Scenario}
+    	
+    \lsection{Scenario}{scenario}
     		Gentco is one of the leading manufacturers of dashing Bowler Hats. Recently the price of unique, high quality Swiss leather that \textit{Gentco} relies on to make their most popular hat has gone up.\\
     		Management at \textit{Gentco} believes that their competitor, \textit{Dapper Inc.}, has been bribing \textit{Gentco}'s exclusive supplier in order to raise prices for Gentco. This would be in direct violation of the contract Gentco has with the supplier. Gentco management is reluctant to make such a direct claim without proof since, if they are wrong, this could deteriate the relationship even further.\\
     		That's why they want us to obtain proof of this. To do so, they want us to investigate \textit{Dapper Inc.} and figure out if they are indeed paying off \textit{Gentco}'s supplier.\\
     		We started off by obtaining a dump of \textit{Dapper Inc.}'s DNS records. One of the system admins had forgotten to disable zone transfers, so these were easily obtainable.\\
     		By looking at these records we discovered that \textit{Dapper Inc.} runs a very modern network, where everything uses IPv6. Undeterred, we started scanning the systems we discovered in the DNS dump. The networking team at \textit{Dapper Inc.} has the fortress locked up quite tight, but htey made one mistake. One of their core routers' management interfaces isn't firewalled off.\\
     		The SSH deamon's banner reveals that \textit{Dapper Inc.} uses some of the latest routers byso \textit{ACME Networks} Recently it was discovered that this vendor includes a hardcoded backdoor account with full privileges in all their routers. Using this account, we gained full access to this core router.\\
-    		Now that we've got a foothold in their network, we need to obtain information. This router uses a Linux based OS assisted by application specific integrated circuits for high performance routing. This presents a problem. We cannot see the traffic passing through the router. The hardware is, however, capable of terminating GRE based tunnels and treating them as if they are physical ports. We also were able to perform some network reconnaisance and obtain a wealth of information about the structure of \textit{Dapper Inc.}'s network. This information is presented in \textit{Section \ref{Environment}}. Sadly, the rest of the network is secured quite well and we are unable to move beyond the router we are currently occupying.\\
+    		Now that we've got a foothold in their network, we need to obtain information. This router uses a Linux based OS assisted by application specific integrated circuits for high performance routing. This presents a problem. We cannot see the traffic passing through the router. The hardware is, however, capable of terminating GRE based tunnels and treating them as if they are physical ports. We also were able to perform some network reconnaisance and obtain a wealth of information about the structure of \textit{Dapper Inc.}'s network. This information is presented in \textit{Section \ref{sec:env_setup}}. Sadly, the rest of the network is secured quite well and we are unable to move beyond the router we are currently occupying.\\
     		While investigating \textit{Dapper Inc.}'s network, we discovered a recent blog post by \textit{Example Corp}, the makers of a \textit{Software as a Service} accounting application. They published a case study detailing how their AI-powered analytics helped \textit{Dapper Inc.} save several million dollars. It turns out that, although they seem to care a lot about their AI technology, they do not care about security. They aren't even using HTTPS! In other words: a golden oppertunity.\\
     		The plan is simple: If we can hijack \textit{Example Corp}'s /48 inside of \textit{Dapper Inc.}'s network and re-route it to a server under our control, we can capture the passwords of \textit{Dapper Inc.}'s accountants and confirm or deny that \textit{Dapper Inc.} is paying \textit{Gentco}' s supplier by accessing \textit{Dapper Inc's} financial reconds.
     		
-    \section{Environment}\label{Environment}
     		
-    \section{Objectives}\label{Objectives}
+    \lsection{Environmental setup}{env_setup}
+		TODO:
+		- Describe the setup of the environment (show picture).
+		- Explain rationale behind it.
+		
+		
+    \lsection{Objectives}{objectives}
 		The main objective is to spy on and redirect traffic in \textit{Dapper Inc.}'s network. To achieve this, we assume the following case:
 		\begin{itemize}
-			\item Full control over router C2 (see Section \label{Environment}).
+			\item Full control over router C2 (see \textit{Section \ref{sec:env_setup}}).
 			\item Method exploits OSPFv3 to re-route traffic to \textit{Example Corp} from the \textit{Accounting Dept.} via C2.
 			\item Send traffic destined for \textit{Example Corp} to an attacker-controlled server.
 			\item This server has been connected via a GRE tunnel to C2.
 		\end{itemize}
 		
-    	\section{Method}
-	    \subsection{Protocol}\label{OSPFv3 Protocol}
-	    		Before coding up an attack, we must first understand the protocol and discover where it's weaknesses and strengths are. The results of this orientative phase are documented in our wiki \cite{wiki}.\\
-	    		TODO:
-	    		- Brief description of OSPF (type of packets, 
-	    		
-	    		
-    		\subsection{Parser}\label{Parser}
-	    		In contrast to OSPv2, OSPv3 does not yet have an open-source project which allowed us to parse OSPFv3 packets, recalculate the needed checksums, or change non-used fields to forge a pre-determined checksum. Therefore, we had to write our own parser which parse incomming packets, craete outgoing packets and do the desired checksum calculations.
-	    		TODO:
-	    		- Brief description of the setup of the parser.
-    			
-    		\subsection{Attack execution}\label{Attack_exec}
-    			Using the \textit{Link State Update} (LSU) packets we can change the weights of any link. However, OSPF has a nasty fightback mechanism which will directly repair the original weight. To prevent this, we can send an additional LS packet. This packet is exactly the same as the generated fightback packet except for the weight, the checksum in the OSPF main header, and some unused parts of the LS header. Note that the checksum in the LS header remains the same, which is nessecary for the next step.\\
-    			Two LS packets are regarded equal when the sequence number, the checksum and the age are equal. Therefore, if our packet arives earlier, then the packet generated by the fightback will be discarded.\\
-    			
-    			
-    \section{Discussion}\label{Discussion}
+	
+    \lsection{Protocol}{protocol}
+    		Before coding up an attack, we must first understand the protocol and discover where it's weaknesses and strengths are. The results of this orientative phase are documented in our wiki \cite{wiki}.\\
+    		\lsubsection{OSPFv3 Packet}{ospfv3_packet}
+			The most important (sub-)packates of the protocol are:
+			\begin{itemize}
+				\item \textbf{Hello Packet}\\
+					Used to keep the link alive.
+				\item \textbf{Database Description Packets}\\
+					This packet is used in the database exchange protocol, where this packet announces the available entries.
+				\item \textbf{Link State Request}\\
+					This packet is used in the database exchange protocol, where this packet announces the needed entries.
+				\item \textbf{Link State Update}\\
+					This packet is used to keep the link weights up to date, and used in the database exchange protocol to initialize entries.
+				\item \textbf{Link State Acknowledgement}\\
+					Packet for acknowledging Link State Update packets
+			\end{itemize}
+		\lsubsection{LSA Packet}{lsa_packet}
+			All \textit{Link State} (LS) OSPF packets contain \textit{Link State Anouncement} (LSA) packets. There are multiple LSA types (see our wiki\cite{wiki} for detailed info), however the most important fields are:
+			\begin{itemize}
+				\item \textbf{Age}\\
+					How long a package has lived so far.
+				\item \textbf{Checksum}\\
+					The Fletcher's checksum\cite{fletcher} of the LSA.
+				\item \textbf{Sequence ID}\\
+					The sequence number of this LSA. Is increased in every \textit{LS Update Packet}
+				\item \textbf{metric}\\
+					The weight/cost of a link.
+			\end{itemize}
+			
+			\lsubsubsection{LSA priority}{lsa_priority}
+				To save processing time, the equality of two LSA's is not determined by checking both packets byte by byte, but by certain fields in the packet. Also, if there is already an old packet in the database then it should be removed. On the other hand, a LSA packet returning to the originating router should not initiate a fightback LSA (see \texit{section \ref{sec:fightback}}). For this purpose, the OSPFv3 protocol defines priority and equality of two packets.
+				A LSA packet \texttt{A} has a higer priority than LSA packet \texttt{B} if (in order):
+				\begin{enumerate}
+					\item The \textit{Sequence ID} of packet \texttt{A} is higher than the \textit{Sequence ID} of packet \texttt{B}
+					\item The \textit{Checksum} of packet \texttt{A} is higher than the checksum of packet \textt{B}.
+					\item The \textit{Age} of packet \texttt{A} is equal to the maximum age and the \textit{Age} of packet \texttt{B} is not equal to the maximum age.
+					\item The difference between the \textit{Age} of packet \texttt{A} and \texttt{B} is more than the maximum allowed difference, and the \textit{Age} of \texttt{A} is higher.
+				\end{enumerate}
+				
+				if none of these old, then the two LSAs are regarded equal.
+				
+			To save processing time, the equality of two LSA's is not determined by checking both packets byte by byte, but by certain fields in the packet. These fields are, in order, \textit{Sequence ID}, \textit{Checksum} and \textit{Age}.
     		
-    \section{Results}\label{Results}
+	\lsection{Parser}{parser}
+   		In contrast to OSPv2, OSPv3 does not yet have an open-source project which allowed us to parse OSPFv3 packets, recalculate the needed checksums, or change non-used fields to forge a pre-determined checksum. Therefore, we had to write our own parser which parse incomming packets, craete outgoing packets and do the desired checksum calculations.
+    		TODO:
+    		- Brief description of the setup of the parser.
+   		
+   	\lsection{Attack engineering}{attack}
+   		\lsubsection{Attack preperation}{attack_prep}
+   			TODO:
+			- IP pinging
+	    		- DB Exchange
+	    		- LS Request
+    			
+    			
+    		\lsubsection{Attack execution}{attack_exec}
+    			The router we have compromised is used as backup link, so the links are very costly and is therefore not choosen as a node in any path. Hence initially we cannot control any packets in the network. To change this, we need to convince the other routers that our connection is the fastest one. We can achieve this by `telling' the other routers that our route is fast and any other alternative route is long. If these routers believe us, then all packets are routed through our router, hence resulting in full control over the network.\\
+    			We can `tell' the other routers the weight of a link using a \textit{Link State Update} (LSU) packet. However, OSPF has a nasty fightback mechanism which will directly repair the original weight if a faulty weight was announced.
+    			
+    			\lsubsubsection{Fightback mechanism}{fightback}
+    				The fightback mechanism is initiated when a router receives a LSU packet which states that it was originated by the receiving router, and is newer than the last LSA the router has send for that link (see \textit{Section \ref{sec:protocol}}). This router then creates a LSU which newer than the received LSU and with the correct data. By doing so, the network is secure against packet corruption on links, but is it also secure agains an attacker?\\
+    				Now there are three approaches in attaching the fightback mechanism. The first is to prevent the fightback from being sent. This is almost impossible since all LSA's are flooded to all routers. The second option is to not let the fightback LSA reach the other routers. This is even harder than the first approach.\\
+    				That leaves us with the third approach, which is letting the other routers ignore the fightback LSA. This already happens naturally when two routers flood the same LSA (see \textit{Section \ref{sec:lsa_equality}}) to another third router. In this case, the second packet will be ignored. So we have to forge an LSA which is regarded equal compared to the fightback LSA -- but has the modified link weight -- and it must arrives earlier than the fightback LSA.\\
+    				For the second condition can be easily achieved by first creating both packets and then sending both of them right after eachother. The first condition is a bit harder. First of all, we can predict the fightback LSA, including 
+    			
+    			
+    			
+    			This packet is exactly the same as the generated fightback packet except for the weight, the checksum in the OSPF main header, and some unused parts of the LS header. Note that the checksum in the LS header remains the same, which is nessecary for the next step.\\
+    			Two LS packets are regarded equal when the sequence number, the checksum and the age are equal. Therefore, if our packet arives earlier, then the packet generated by the fightback will be discarded.\\
+    		
+    		
+    \lsection{Discussion}{discussion}
+    		
+    		
+    		
+    \lsection{Results}{results}
     		
     
     
@@ -147,8 +218,14 @@ date
 
 \bibitem{wiki}
 R.Wichertjes \& K.Wortel,
-link: \url{https://github.com/rewbycraft/OSPFv3DisguisedLSA/wiki},
-OSPFv3 Protocol Wiki
+OSPFv3 Protocol Wiki,
+\url{https://github.com/rewbycraft/OSPFv3DisguisedLSA/wiki}
+
+\bibitem{fletcher}
+Wikipedia,
+Fletcher's Checksum,
+\url{https://en.wikipedia.org/wiki/Fletcher\%27s_checksum}
+
 
 
 
