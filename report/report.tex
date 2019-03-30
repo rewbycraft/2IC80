@@ -156,19 +156,15 @@
 			\end{itemize}
 			
 			\lsubsubsection{LSA priority}{lsa_priority}
-				To save processing time, the equality of two LSA's is not determined by checking both packets byte by byte, but by certain fields in the packet. Also, if there is already an old packet in the database then it should be removed. On the other hand, a LSA packet returning to the originating router should not initiate a fightback LSA (see \texit{section \ref{sec:fightback}}). For this purpose, the OSPFv3 protocol defines priority and equality of two packets.
+				To save processing time, the equality of two LSA's is not determined by checking both packets byte by byte, but by certain fields in the packet. Also, if there is already an old packet in the database then it should be removed. On the other hand, a LSA packet returning to the originating router should not initiate a fightback LSA (see \textit{section \ref{sec:fightback}}). For this purpose, the OSPFv3 protocol defines priority and equality of two packets.
 				A LSA packet \texttt{A} has a higer priority than LSA packet \texttt{B} if (in order):
 				\begin{enumerate}
 					\item The \textit{Sequence ID} of packet \texttt{A} is higher than the \textit{Sequence ID} of packet \texttt{B}
-					\item The \textit{Checksum} of packet \texttt{A} is higher than the checksum of packet \textt{B}.
+					\item The \textit{Checksum} of packet \texttt{A} is higher than the checksum of packet \texttt{B}.
 					\item The \textit{Age} of packet \texttt{A} is equal to the maximum age and the \textit{Age} of packet \texttt{B} is not equal to the maximum age.
 					\item The difference between the \textit{Age} of packet \texttt{A} and \texttt{B} is more than the maximum allowed difference, and the \textit{Age} of \texttt{A} is higher.
 				\end{enumerate}
-				
-				if none of these old, then the two LSAs are regarded equal.
-				
-			To save processing time, the equality of two LSA's is not determined by checking both packets byte by byte, but by certain fields in the packet. These fields are, in order, \textit{Sequence ID}, \textit{Checksum} and \textit{Age}.
-    		
+				If none of these cases hold for either of the packets, then the two LSAs are regarded equal.
 	\lsection{Parser}{parser}
    		In contrast to OSPv2, OSPv3 does not yet have an open-source project which allowed us to parse OSPFv3 packets, recalculate the needed checksums, or change non-used fields to forge a pre-determined checksum. Therefore, we had to write our own parser which parse incomming packets, craete outgoing packets and do the desired checksum calculations.
     		TODO:
@@ -183,21 +179,25 @@
     			
     			
     		\lsubsection{Attack execution}{attack_exec}
-    			The router we have compromised is used as backup link, so the links are very costly and is therefore not choosen as a node in any path. Hence initially we cannot control any packets in the network. To change this, we need to convince the other routers that our connection is the fastest one. We can achieve this by `telling' the other routers that our route is fast and any other alternative route is long. If these routers believe us, then all packets are routed through our router, hence resulting in full control over the network.\\
+    			The router we have compromised is used as backup link, so the links are very costly and is therefore not choosen as a node in any path. Hence initially we cannot control any packets in the network. To change this, we need to convince the other routers that our connection is the fastest one. We can achieve this by `telling' the other routers that our route is fast and any other alternative route is long. If these routers believe us, then all packets are routed through our router, hence resulting in full control over the network.
+    			
     			We can `tell' the other routers the weight of a link using a \textit{Link State Update} (LSU) packet. However, OSPF has a nasty fightback mechanism which will directly repair the original weight if a faulty weight was announced.
     			
     			\lsubsubsection{Fightback mechanism}{fightback}
-    				The fightback mechanism is initiated when a router receives a LSU packet which states that it was originated by the receiving router, and is newer than the last LSA the router has send for that link (see \textit{Section \ref{sec:protocol}}). This router then creates a LSU which newer than the received LSU and with the correct data. By doing so, the network is secure against packet corruption on links, but is it also secure agains an attacker?\\
-    				Now there are three approaches in attaching the fightback mechanism. The first is to prevent the fightback from being sent. This is almost impossible since all LSA's are flooded to all routers. The second option is to not let the fightback LSA reach the other routers. This is even harder than the first approach.\\
-    				That leaves us with the third approach, which is letting the other routers ignore the fightback LSA. This already happens naturally when two routers flood the same LSA (see \textit{Section \ref{sec:lsa_equality}}) to another third router. In this case, the second packet will be ignored. So we have to forge an LSA which is regarded equal compared to the fightback LSA -- but has the modified link weight -- and it must arrives earlier than the fightback LSA.\\
-    				For the second condition can be easily achieved by first creating both packets and then sending both of them right after eachother. The first condition is a bit harder. First of all, we can predict the fightback LSA, including 
-    			
-    			
-    			
-    			This packet is exactly the same as the generated fightback packet except for the weight, the checksum in the OSPF main header, and some unused parts of the LS header. Note that the checksum in the LS header remains the same, which is nessecary for the next step.\\
-    			Two LS packets are regarded equal when the sequence number, the checksum and the age are equal. Therefore, if our packet arives earlier, then the packet generated by the fightback will be discarded.\\
-    		
-    		
+    				The fightback mechanism is initiated when a router receives a LSU packet which states that it was originated by the receiving router, and is newer than the last LSA the router has send for that link (see \textit{Section \ref{sec:lsa_priority}}). This router then creates a LSU which newer than the received LSU and with the correct data. By doing so, the network is secure against packet corruption, but is it also secure agains an attacker?
+    				
+    				Now there are three approaches in attaching the fightback mechanism. The first is to prevent the fightback from being sent. This is almost impossible since all LSA's are flooded to all routers.
+    				
+    				The second approach is to not let the fightback LSA reach the other routers. This is even harder than the first approach, as it is basically the same but then for all routers in the network.
+    				
+    				That leaves us with the third approach, which is letting the other routers ignore the fightback LSA. This already happens naturally when two routers flood the same LSA to another third router. In this case, the second ariving packet will be ignored (see \textit{Section \ref{sec:lsa_priority}}). So we have to forge an LSA which is regarded equal compared to the fightback LSA -- but has the modified link weight -- and it must arrives earlier than the fightback LSA.
+    				
+    				The second condition can be easily achieved by first creating both packets and then sending them right after eachother.
+    				
+    				The first condition is a bit harder. First of all, we can predict the fightback LSA, including the priority fields (\textit{Sequence ID} and \textit{Checksum}). The \textit{Sequence ID} is easy to forge, but the checksum is impossible if we are not allowed any content of the LSA. Luckily, there are some reserved zero bytes which are documented as ``\textit{Should be zero, must not be read.}''\cite{ospfv3-5340}. Now we can set the checksum to the predetermined value and make it a valid checksum by altering these bits.
+    				
+    				In this way we have created a packet which is regarded equal compared to the fightback LSA, but also contains the value we want the link to be. After sending both packets, the targeded router makes a fightback LSA and floods it in the network. However, since our packet was first and all routers believe they just found a copy of the same LSA. Therefore they ignore it, resulting in our forged link weight being accepted and the correction being rejected.
+    				
     \lsection{Discussion}{discussion}
     		
     		
@@ -209,25 +209,79 @@
     %%%%%%%% References %%%%%%%%
     \begin{thebibliography}{999}
 \bibitem{ref}
-author,
 title,
+author,
 publisher,
 Country e.d.
 edition,
-date
+date,
+url
 
 \bibitem{wiki}
-R.Wichertjes \& K.Wortel,
 OSPFv3 Protocol Wiki,
+R.Wichertjes \& K.Wortel,
 \url{https://github.com/rewbycraft/OSPFv3DisguisedLSA/wiki}
 
 \bibitem{fletcher}
-Wikipedia,
 Fletcher's Checksum,
+Wikipedia,
+December 2018,
 \url{https://en.wikipedia.org/wiki/Fletcher\%27s_checksum}
 
 
+\bibitem{ospfv3-6860}
+OSPFv3 Spec. - RFC 6860,
+Network Working Group,
+Y. Yang at al.,
+January 2013,
+\url{https://tools.ietf.org/html/rfc6860}
 
+\bibitem{ospfv3-6845}
+OSPFv3 Spec. - RFC 6845,
+Network Working Group,
+N.Sheth at al.,
+January 2013,
+\url{https://tools.ietf.org/html/rfc6845}
+
+\bibitem{ospfv3-5340}
+OSPFv3 Spec. - RFC 5340,
+Network Working Group,
+R. Coltun at al.,
+July 2008,
+\url{https://tools.ietf.org/html/rfc5340}
+
+\bibitem{ospfv2-2460}
+IPv6 Spec. - RFC 2460,
+Network Working Group,
+S. Deering at al.,
+December 1998,
+\url{https://tools.ietf.org/html/rfc2460}
+
+\bibitem{ospfv2-2328}
+OSPFv2 Spec. - RFC 2328,
+Network Working Group,
+J.Moy at al.,
+April 1998,
+\url{https://tools.ietf.org/html/rfc2328}
+
+\bibitem{ospfv2-1191}
+Path MTU Discovery - RFC 1191,
+Network Working Group,
+J. Mogul at al.,
+November 1998,
+\url{https://tools.ietf.org/html/rfc1191}
+
+\bibitem{ospf-905}
+Transport Protocol - RFC 905,
+Network Working Group,
+April 1984,
+\url{https://tools.ietf.org/html/rfc905}
+
+\bibitem{ospf-892}
+Transport Protocol - RFC 892,
+Network Working Group,
+December 1983,
+\url{https://tools.ietf.org/html/rfc892}
 
     \end{thebibliography}
 
