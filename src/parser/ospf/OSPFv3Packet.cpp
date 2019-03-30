@@ -138,22 +138,26 @@ void parser::OSPFv3Packet::setDest(uint128_t dest) {
 }
 
 void parser::OSPFv3Packet::transmit() const {
+	Tins::PacketSender sender;
+
 	if (dest == 0 || source == 0)
 		throw MalformedPacketException("Cannot send packet without destination and source.");
 	
 	auto logger = spdlog::get("transmit");
 	
 	logger->debug("Sending packet packet: {}", Packet::toString());
-	Tins::PacketSender sender;
+
 	std::shared_ptr<parser::OSPFv3Packet> pp = std::make_shared<parser::OSPFv3Packet>(*this);
 	Tins::IPv6 pkt = Tins::IPv6(tinshelper::raw_to_tins(dest), tinshelper::raw_to_tins(source)) / pdu::OSPFv3(pp);
+
 	bool is_ll = (*pkt.dst_addr().begin() == 0xfe) && (*(pkt.dst_addr().begin()+1) == 0x80);
+
+	auto intf = Tins::NetworkInterface(pkt.src_addr());
+
 	if (!pkt.dst_addr().is_multicast() && !is_ll) {
-		logger->trace("Using L3 sending on interface {}.", Tins::NetworkInterface(pkt.src_addr()).name());
-		sender.send(pkt, pkt.src_addr());
+		logger->trace("Using L3 sending on interface {}.", intf.name());
+		sender.send(pkt, intf);
 	} else {
-		Tins::NetworkInterface intf = pkt.src_addr();
-		
 		Tins::HWAddress<6> mac;
 		if (pkt.dst_addr().is_multicast()) {
 			mac = "33:33:00:00:00:00";

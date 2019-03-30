@@ -19,6 +19,8 @@ for rtr in e1 e2 c1 c2 d1 d2 a1 a2 a3 f1 b1; do
 	ip netns exec $rtr ip link set lo up
 	echo 1 | ip netns exec $rtr tee /proc/sys/net/ipv6/conf/all/forwarding > /dev/null
 	echo 1 | ip netns exec $rtr tee /proc/sys/net/ipv6/conf/default/forwarding > /dev/null
+	echo 0 | ip netns exec $rtr tee /proc/sys/net/ipv4/conf/all/rp_filter > /dev/null
+	echo 0 | ip netns exec $rtr tee /proc/sys/net/ipv4/conf/default/rp_filter > /dev/null
 done
 
 PFX=2a0b:6b83:2c80:ffff::
@@ -55,7 +57,8 @@ addlink b1 f1
 
 for rtr in f1 e1 e2 c1 c2 d1 d2 a1 a2 a3; do
 	echo "=> Starting bird $rtr..."
-	ip netns exec $rtr bird -c ./configs/$rtr.conf -s /tmp/$rtr.sock -P /tmp/$rtr.pid
+	ip netns exec $rtr bird -c ./configs/$rtr.conf -s /tmp/$rtr.sock -P /tmp/$rtr.pid -D /tmp/$rtr-dbg.log
+	birdc -s /tmp/$rtr.sock debug all all
 done
 
 ip netns exec a3 ip address add 2a0b:6b83:2c80:1234::1/64 dev lo
