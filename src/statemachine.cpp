@@ -227,7 +227,7 @@ namespace statemachine {
 				auto &lsas = std::dynamic_pointer_cast<parser::DatabaseDescriptionPacket>(
 					packet.packet->getSubpacket())->getLsas();
 				partialLSAs.insert(partialLSAs.end(), lsas.begin(), lsas.end());
-				logger->trace("Obtained {} lsas.", lsas.size());
+				logger->debug("Obtained {} lsas.", lsas.size());
 				
 				context<Machine>().setTimeout(3s);
 				return discard_event();
@@ -236,7 +236,7 @@ namespace statemachine {
 			
 			sc::result react(const event::Timeout &ignored) {
 				if (context<DatabaseTransfer>().partialLSAs.empty()) {
-					logger->info("No headers yet. Extending timeout.");
+					logger->debug("No headers yet. Extending timeout.");
 					context<Machine>().setTimeout(3s);
 					return discard_event();
 				} else {
@@ -298,7 +298,7 @@ namespace statemachine {
 				auto &lsas = std::dynamic_pointer_cast<parser::LinkStateUpdatePacket>(
 					packet.packet->getSubpacket())->getLsas();
 				fullLSAs.insert(fullLSAs.end(), lsas.begin(), lsas.end());
-				logger->trace("Obtained {} lsas.", lsas.size());
+				logger->debug("Obtained {} lsas.", lsas.size());
 				
 				context<Machine>().setTimeout(3s);
 				return discard_event();
@@ -322,7 +322,7 @@ namespace statemachine {
 				v.erase(last, v.end());
 				
 				if (v.empty()) {
-					logger->info("No LSAs yet. Extending timeout.");
+					logger->debug("No LSAs yet. Extending timeout.");
 					context<Machine>().setTimeout(3s);
 					return discard_event();
 				} else {
@@ -388,7 +388,7 @@ namespace statemachine {
 								
 								int c = 0;
 								while (!yay && (c++ < 16)) {
-									logger->trace("Checksum break failure. Incrementing metric.");
+									logger->debug("Checksum break failure. Incrementing metric.");
 									
 									auto newRouterLSA = std::dynamic_pointer_cast<parser::RouterLSAPacket>(
 										newFBLSA->getSubpacket());

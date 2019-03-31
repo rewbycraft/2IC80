@@ -16,7 +16,6 @@ bool processPacket(const PDU &pdu) {
 	auto ospf = ip.rfind_pdu<pdu::OSPFv3>();
 	ospf.updateValues(ip);
 	
-	logger->trace("IP:       {} -> {}", ip.src_addr().to_string(), ip.dst_addr().to_string());
 	logger->trace(ospf.getPacket()->Packet::toString());
 	
 	statemachine::onPacket(ospf.getPacket());
@@ -65,7 +64,7 @@ int attack_main(int argc, char *argv[]) {
 	logger->info("  self router-id: {}", vm["self"].as<std::string>());
 	logger->info("  targets:");
 	for (auto const& [a,b,metric] : targets) {
-		logger->info("    {} - {} -> {}", a, b, metric);
+		logger->info("    {} <-> {} -> {}", Tins::IPv4Address(parser::byteswap(a)).to_string(), Tins::IPv4Address(parser::byteswap(b)).to_string(), metric);
 	}
 	
 	if (vm.count("netns")) {
