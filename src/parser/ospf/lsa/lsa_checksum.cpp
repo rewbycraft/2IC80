@@ -80,6 +80,41 @@ std::pair<int, int> calcLSAChecksumPart(const parser::bytevector& data, bool ver
 	return { c0, c1 };
 }
 
+int mod(int i, int mod) {
+    int rtn = i % mod;
+    if (rtn < 0) rtn += mod;
+    return rtn;
+}
+
+/**
+ * Extended euclidean algorithm.
+ * Source: https://www.geeksforgeeks.org/modular-division/
+ *
+ * @param a
+ * @param b
+ * @param x
+ * @param y
+ * @return
+ */
+int gcdExtended(int a, int b, int *x, int *y) {
+    // Base Case
+    if (a == 0)
+    {
+        *x = 0, *y = 1;
+        return b;
+    }
+
+    int x1, y1; // To store results of recursive call
+    int gcd = gcdExtended(b%a, a, &x1, &y1);
+
+    // Update x and y using results of recursive
+    // call
+    *x = y1 - (b/a) * x1;
+    *y = x1;
+
+    return gcd;
+}
+
 
 std::optional<std::vector<std::pair<std::uint8_t, std::size_t>>> parser::checksum::lsa::modifyChecksum(
 		const parser::bytevector& data, const std::vector<std::size_t>& targetIndices,
@@ -90,29 +125,69 @@ std::optional<std::vector<std::pair<std::uint8_t, std::size_t>>> parser::checksu
 		targets.emplace_back(data[i], i);
 	}
 
-	// Determine the amount c0 and c1 were changed.
-	std::pair<std::uint8_t, std::uint8_t> checksumPart = calcLSAChecksumPart(data, false);
-	std::pair<std::uint8_t, std::uint8_t> revertedChecksum = revertPartLSAChecksum(targetChecksum, data.size());
-	int c0_diff = checksumPart.first - revertedChecksum.first;
-	int c1_diff = checksumPart.second - revertedChecksum.second;
+    // Determine the amount c0 and c1 were changed.
+    std::pair<std::uint8_t, std::uint8_t> checksumPart = calcLSAChecksumPart(data, false);
+    std::pair<std::uint8_t, std::uint8_t> revertedChecksum = revertPartLSAChecksum(targetChecksum, data.size());
 
-	// Calculate part of the solution.
-	int div = int(targets[0].second - targets[1].second) % 255;
-	int sub_dt0 = int(targets[1].second * c0_diff - c1_diff) % 255;
-	int sub_dt1 = int(targets[0].second * c0_diff + c1_diff) % 255;
+    int delta_c0 = checksumPart.first - revertedChecksum.first;
+    int delta_c1 = checksumPart.second - revertedChecksum.second;
+    int l = int(data.size() % 255);
+    std::size_t i, j;
+    int x, y, inv;
 
-	int dt0 = sub_dt0 / div;
-	int dt1 = sub_dt1 / div;
+    bool found = false;
+    for (i = 0; i < targets.size(); i++) {
+        for (j = i + 1; j < targets.size(); j++) {
+            x = int(targets[i].second % 255);
+            y = int(targets[j].second % 255);
 
-	// Check if there is a solution available.
-	if (dt0 * div != sub_dt0 || dt1 * div != sub_dt1) {
-		return std::nullopt;
-	}
+            // Determine the division.
+            int div = (y - x) * l;
+            // Calculate the inverse for the division.
+            int dummy;
+            int gcd = gcdExtended(div, 255, &inv, &dummy);
+            // Check if inverse exists.
+            if (gcd == 1) {
+                found = true;
+                break;
+            }
+        }
+        if (found) break;
+    }
 
-	// Determine and return the result.
-	targets[0].first = uint8_t(targets[0].first + dt0 / div);
-	targets[1].first = uint8_t(targets[1].first + dt1 / div);
-	return { targets };
+    if (!found) return { };
+    int delta_x = ( (l - x) * delta_c0 - x * delta_c1) * inv;
+    int delta_y = (-(l - y) * delta_c0 + y * delta_c1) * inv;
+
+    targets[i].first = uint8_t(mod(delta_x + x, 255));
+    targets[j].first = uint8_t(mod(delta_y + y, 255));
+
+    return { targets };
+
+    /*
+    // Determine the amount c0 and c1 were changed.
+    std::pair<std::uint8_t, std::uint8_t> checksumPart = calcLSAChecksumPart(data, false);
+    std::pair<std::uint8_t, std::uint8_t> revertedChecksum = revertPartLSAChecksum(targetChecksum, data.size());
+    int c0_diff = checksumPart.first - revertedChecksum.first;
+    int c1_diff = checksumPart.second - revertedChecksum.second;
+
+    // Calculate part of the solution.
+    int div = int(targets[0].second - targets[1].second) % 255;
+    int sub_dt0 = int(targets[1].second * c0_diff - c1_diff) % 255;
+    int sub_dt1 = int(targets[0].second * c0_diff + c1_diff) % 255;
+
+    int dt0 = sub_dt0 / div;
+    int dt1 = sub_dt1 / div;
+
+    // Check if there is a solution available.
+    if (dt0 * div != sub_dt0 || dt1 * div != sub_dt1) {
+        return std::nullopt;
+    }
+
+    // Determine and return the result.
+    targets[0].first = uint8_t(targets[0].first + dt0 / div);
+    targets[1].first = uint8_t(targets[1].first + dt1 / div);
+    return { targets };*/
 }
 
 

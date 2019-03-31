@@ -130,11 +130,11 @@ void parser::LSAPacket::updateChecksum() {
 const std::optional<std::shared_ptr<parser::LSAPacket>> parser::LSAPacket::modToChecksum(uint16_t targetChecksum) {
 	std::vector<std::size_t> targetIndices =
 			std::dynamic_pointer_cast<parser::ChecksumInterface>(subpacket)->getEmptyByteIndices();
-	for (std::size_t i = 0; i < targetIndices.size(); i++) {
-		targetIndices[i] += 20;
+	for (unsigned long &targetIndice : targetIndices) {
+		targetIndice += 20;
 	}
 	auto serialized = this->serialize();
-	auto rtn = parser::checksum::lsa::modifyChecksum(serialized, targetIndices, targetChecksum);
+	auto rtn = parser::checksum::lsa::modifyChecksum(serialized, targetIndices, targetChecksum);//parser::byteswap(targetChecksum));
 	if (!rtn) {
 		return std::nullopt;
 	}
