@@ -11,9 +11,20 @@
 #include "lsa_checksum.h"
 
 
-std::pair<int, int> revertPartLSAChecksum(const uint16_t& checksum, std::size_t size) {
+int mod(int i, int mod) {
+    int rtn = i % mod;
+    if (rtn < 0) rtn += mod;
+    return rtn;
+}
+
+std::pair<int, int> revertPartLSAChecksum(const uint16_t &checksum, std::size_t size) {
 	int x = (checksum >> 8) & 0xFF;
 	int y = checksum & 0xFF;
+	int l = int(size % 255);
+
+    int c0 = mod(-x - y, 255);
+	int c1 = mod((16 - l) * x + (17 - l) * y, 255);
+	/*
 	int alpha = int(size) - 17;
 	int beta = int(size) - 16;
 
@@ -21,7 +32,7 @@ std::pair<int, int> revertPartLSAChecksum(const uint16_t& checksum, std::size_t 
 	if (c0 < 0) c0 += 255;
 	int c1 = (-beta*x - alpha*y) % 255;
 	if (c1 < 0) c0 += 255;
-
+    */
 	return { c0, c1 };
 }
 
@@ -80,12 +91,6 @@ std::pair<int, int> calcLSAChecksumPart(const parser::bytevector& data, bool ver
 	return { c0, c1 };
 }
 
-int mod(int i, int mod) {
-    int rtn = i % mod;
-    if (rtn < 0) rtn += mod;
-    return rtn;
-}
-
 /**
  * Extended euclidean algorithm.
  * Source: https://www.geeksforgeeks.org/modular-division/
@@ -116,33 +121,34 @@ int gcdExtended(int a, int b, int *x, int *y) {
 }
 
 
-std::optional<std::vector<std::pair<std::uint8_t, std::size_t>>> parser::checksum::lsa::modifyChecksum(
+std::optional<std::vector<std::pair<std::size_t, std::uint8_t>>> parser::checksum::lsa::modifyChecksum(
 		const parser::bytevector& data, const std::vector<std::size_t>& targetIndices,
 		const std::uint16_t& targetChecksum) {
 	// Determine which fields are allowed to be changed.
-	std::vector<std::pair<uint8_t, size_t>> targets;
+	std::vector<std::pair<std::size_t, std::uint8_t>> targets;
 	for (std::size_t i : targetIndices) {
-		targets.emplace_back(data[i], i);
+		targets.emplace_back(i, data[i]);
 	}
 
     // Determine the amount c0 and c1 were changed.
     std::pair<std::uint8_t, std::uint8_t> checksumPart = calcLSAChecksumPart(data, false);
     std::pair<std::uint8_t, std::uint8_t> revertedChecksum = revertPartLSAChecksum(targetChecksum, data.size());
 
-    int delta_c0 = checksumPart.first - revertedChecksum.first;
-    int delta_c1 = checksumPart.second - revertedChecksum.second;
+    int delta_c0 = (checksumPart.first - revertedChecksum.first) % 255;
+    int delta_c1 = (checksumPart.second - revertedChecksum.second) % 255;
     int l = int(data.size() % 255);
     std::size_t i, j;
-    int x, y, inv;
+    int x, y, div, inv;
 
     bool found = false;
     for (i = 0; i < targets.size(); i++) {
         for (j = i + 1; j < targets.size(); j++) {
-            x = int(targets[i].second % 255);
-            y = int(targets[j].second % 255);
+            x = int(targets[i].first % 255);
+            y = int(targets[j].first % 255);
 
             // Determine the division.
-            int div = (y - x) * l;
+            //int div = (y - x) * l;
+            div = mod((y - x) * (l - 1), 255);
             // Calculate the inverse for the division.
             int dummy;
             int gcd = gcdExtended(div, 255, &inv, &dummy);
@@ -156,11 +162,13 @@ std::optional<std::vector<std::pair<std::uint8_t, std::size_t>>> parser::checksu
     }
 
     if (!found) return { };
-    int delta_x = ( (l - x) * delta_c0 - x * delta_c1) * inv;
-    int delta_y = (-(l - y) * delta_c0 + y * delta_c1) * inv;
+    //int delta_x = mod(-(l - y) * delta_c0 + y * delta_c1, 255) * inv;
+    //int delta_y = mod( (l - x) * delta_c0 - x * delta_c1, 255) * inv;
+    int delta_x = mod(-(l - y - 1) * delta_c0 + y * delta_c1, 255) * inv;
+    int delta_y = mod( (l - x - 1) * delta_c0 - x * delta_c1, 255) * inv;
 
-    targets[i].first = uint8_t(mod(delta_x + x, 255));
-    targets[j].first = uint8_t(mod(delta_y + y, 255));
+    targets[i].second = uint8_t(mod(delta_x + targets[i].second, 255));
+    targets[j].second = uint8_t(mod(delta_y + targets[j].second, 255));
 
     return { targets };
 
@@ -207,10 +215,8 @@ std::uint16_t parser::checksum::lsa::calcChecksum(const parser::bytevector& data
 	return uint16_t((x << 8) | y);
 
 	/**/
-	int x = (-res.second + (int(data.size()) - 17) * res.first) % 255;
-	int y = ( res.second - (int(data.size()) - 16) * res.first) % 255;
-    if (x <= 0) x += 255;
-    if (y <= 0) y += 255;
+	int x = mod(-res.second + (int(data.size()) - 17) * res.first, 255);
+	int y = mod( res.second - (int(data.size()) - 16) * res.first, 255);
 
     //std::cout << "0x" << std::hex << x << std::dec << " / " << x << " / 0b " << std::bitset<8>(x) << "\n";
     //std::cout << "0x" << std::hex << y << std::dec << " / " << y << " / 0b " << std::bitset<8>(y) << "\n";

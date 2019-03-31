@@ -26,9 +26,10 @@ namespace parser {
 			 * @param newValues a vector denoting the new values to set for the bytes
 			 *     specified in {@code changed}.
 			 *
-			 * @return {@code true} if the checksum is valid. {@code false} otherwise.
+			 * @return An optional vector containing pairs where the first value contains the pointer and
+			 *     the second the new data which should be changed in the data stream.
 			 */
-			std::optional<std::vector<std::pair<std::uint8_t, std::size_t>>> modifyChecksum(
+			std::optional<std::vector<std::pair<std::size_t, std::uint8_t>>> modifyChecksum(
 					const parser::bytevector &data, const std::vector<std::size_t> &targetIndices,
 					const std::uint16_t &targetChecksum);
 

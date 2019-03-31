@@ -30,8 +30,8 @@ TEST(checksumtest, recalcChecksumTest01) {
             iapLSA->getPrefixes()[0]);
     const parser::PrefixLSAPacket::Header &origHeader = prefixLSA->getHeader();
 
-    const std::uint16_t targetChecksum = 100; // oldChecksum;
-    for (std::uint16_t metric = 28939; !newPacket; metric++) {
+    const std::uint16_t targetChecksum = 41653; // oldChecksum;
+    for (std::uint16_t metric = 100; !newPacket; metric++) { // 28939
         const parser::PrefixLSAPacket::Header newHeader = {
                 origHeader.length, origHeader.options, uint16_t(metric), origHeader.address
         };
@@ -40,7 +40,7 @@ TEST(checksumtest, recalcChecksumTest01) {
     }
 
     lsas[1] = newPacket.value();
-    //lsas[1]->updateValues();
+    lsas[1]->updateValues();
     lsu->setLsas(lsas);
     packet.updateValues();
     const std::uint16_t newChecksum = newPacket.value()->getHeader().checksum;

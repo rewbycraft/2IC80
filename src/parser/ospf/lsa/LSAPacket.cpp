@@ -134,13 +134,13 @@ const std::optional<std::shared_ptr<parser::LSAPacket>> parser::LSAPacket::modTo
 		targetIndice += 20;
 	}
 	auto serialized = this->serialize();
-	auto rtn = parser::checksum::lsa::modifyChecksum(serialized, targetIndices, targetChecksum);//parser::byteswap(targetChecksum));
+	auto rtn = parser::checksum::lsa::modifyChecksum(serialized, targetIndices, targetChecksum); //parser::byteswap(targetChecksum));
 	if (!rtn) {
 		return std::nullopt;
 	}
 
 	for (auto pair : *rtn) {
-		serialized[pair.second] = pair.first;
+		serialized[pair.first] = pair.second;
 	}
 
 	return { std::make_shared<LSAPacket>(serialized) };
