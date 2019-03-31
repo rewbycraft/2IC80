@@ -70,5 +70,5 @@ extractPrefix(const parser::bytevector &input) {
 }
 
 std::vector<std::size_t> parser::PrefixLSAPacket::getEmptyByteIndices() {
-	return std::vector<std::size_t>{2, 3};
+	return std::vector<std::size_t>{};
 }

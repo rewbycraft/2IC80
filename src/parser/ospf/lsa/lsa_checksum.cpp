@@ -3,9 +3,9 @@
 //
 
 // tmp
-//#include <iomanip>
-//#include <iostream>
-//#include <bitset>
+#include <iomanip>
+#include <iostream>
+#include <bitset>
 
 #include <vector>
 #include "lsa_checksum.h"
@@ -134,27 +134,43 @@ std::optional<std::vector<std::pair<std::size_t, std::uint8_t>>> parser::checksu
     std::pair<std::uint8_t, std::uint8_t> checksumPart = calcLSAChecksumPart(data, false);
     std::pair<std::uint8_t, std::uint8_t> revertedChecksum = revertPartLSAChecksum(targetChecksum, data.size());
 
-    int delta_c0 = (checksumPart.first - revertedChecksum.first) % 255;
-    int delta_c1 = (checksumPart.second - revertedChecksum.second) % 255;
+    int delta_c0 = checksumPart.first - revertedChecksum.first;
+    int delta_c1 = checksumPart.second - revertedChecksum.second;
     int l = int(data.size() % 255);
     std::size_t i, j;
-    int x, y, div, inv;
-
+    int x, y, div_dx, div_dy;
     bool found = false;
+
     for (i = 0; i < targets.size(); i++) {
         for (j = i + 1; j < targets.size(); j++) {
             x = int(targets[i].first % 255);
             y = int(targets[j].first % 255);
 
-            // Determine the division.
+            // Determine the divisor.
             //int div = (y - x) * l;
-            div = mod((y - x) * (l - 1), 255);
+            //int div = mod((y - x) * (l - 1), 255);
+            int div = y - x;
+
+            // Determine the upper parts of the division.
+            int delta_x = mod( (l - y) * delta_c0 - delta_c1, 255);
+            int delta_y = mod(-(l - x) * delta_c0 + delta_c1, 255);
+            /*
+            div_dx = delta_x / div;
+            div_dy = delta_y / div;
+
+            if (div_dx * div == delta_x && div_dx * div == delta_y) {
+                found = true;
+                break;
+            }
+            */
             // Calculate the inverse for the division.
-            int dummy;
+            int inv, dummy;
             int gcd = gcdExtended(div, 255, &inv, &dummy);
             // Check if inverse exists.
             if (gcd == 1) {
                 found = true;
+                div_dx = delta_x * inv;
+                div_dy = delta_y * inv;
                 break;
             }
         }
@@ -164,11 +180,11 @@ std::optional<std::vector<std::pair<std::size_t, std::uint8_t>>> parser::checksu
     if (!found) return { };
     //int delta_x = mod(-(l - y) * delta_c0 + y * delta_c1, 255) * inv;
     //int delta_y = mod( (l - x) * delta_c0 - x * delta_c1, 255) * inv;
-    int delta_x = mod(-(l - y - 1) * delta_c0 + y * delta_c1, 255) * inv;
-    int delta_y = mod( (l - x - 1) * delta_c0 - x * delta_c1, 255) * inv;
+    //int delta_x = mod(-(l - y - 1) * delta_c0 + y * delta_c1, 255) * inv;
+    //int delta_y = mod( (l - x - 1) * delta_c0 - x * delta_c1, 255) * inv;
 
-    targets[i].second = uint8_t(mod(delta_x + targets[i].second, 255));
-    targets[j].second = uint8_t(mod(delta_y + targets[j].second, 255));
+    targets[i].second = uint8_t(mod(div_dx + targets[i].second, 255));
+    targets[j].second = uint8_t(mod(div_dy + targets[j].second, 255));
 
     return { targets };
 
@@ -180,9 +196,9 @@ std::optional<std::vector<std::pair<std::size_t, std::uint8_t>>> parser::checksu
     int c1_diff = checksumPart.second - revertedChecksum.second;
 
     // Calculate part of the solution.
-    int div = int(targets[0].second - targets[1].second) % 255;
-    int sub_dt0 = int(targets[1].second * c0_diff - c1_diff) % 255;
-    int sub_dt1 = int(targets[0].second * c0_diff + c1_diff) % 255;
+    int div = int(targets[0].first - targets[1].first) % 255;
+    int sub_dt0 = int(targets[1].first * c0_diff - c1_diff) % 255;
+    int sub_dt1 = int(targets[0].first * c0_diff + c1_diff) % 255;
 
     int dt0 = sub_dt0 / div;
     int dt1 = sub_dt1 / div;
@@ -193,8 +209,8 @@ std::optional<std::vector<std::pair<std::size_t, std::uint8_t>>> parser::checksu
     }
 
     // Determine and return the result.
-    targets[0].first = uint8_t(targets[0].first + dt0 / div);
-    targets[1].first = uint8_t(targets[1].first + dt1 / div);
+    targets[0].second = uint8_t(targets[0].first + dt0 / div);
+    targets[1].second = uint8_t(targets[1].first + dt1 / div);
     return { targets };*/
 }
 
