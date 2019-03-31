@@ -4,6 +4,7 @@
 #include "netns.h"
 #include "statemachine.h"
 #include <boost/program_options.hpp>
+#include <boost/algorithm/string.hpp>
 #include "neighborscan.h"
 
 using namespace Tins;
@@ -31,7 +32,8 @@ int attack_main(int argc, char *argv[]) {
 		("log,l",
 		 boost::program_options::value<typename std::underlying_type<spdlog::level::level_enum>::type>()->default_value(
 			 spdlog::level::info), "Loglevel")
-		("self,s", boost::program_options::value<std::string>()->default_value("1.1.2.2"), "Who am I?");
+		("self,s", boost::program_options::value<std::string>()->default_value("1.1.2.2"), "Who am I?")
+		("targets,t", boost::program_options::value<std::vector<std::string>>()->multitoken(), "Who do I attack? Multiple of a,b,metric");
 	
 	boost::program_options::variables_map vm;
 	boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);
@@ -45,6 +47,15 @@ int attack_main(int argc, char *argv[]) {
 	}
 	
 	auto logger = spdlog::get("main");
+	std::vector<std::tuple<uint32_t, uint32_t, uint16_t>> targets;
+	
+	for (auto const& opt : vm["targets"].as<std::vector<std::string>>()) {
+		std::vector<std::string> res;
+		boost::algorithm::split(res, opt, boost::is_any_of(","));
+		targets.emplace_back(parser::byteswap<uint32_t>(Tins::IPv4Address(res[0])), parser::byteswap<uint32_t>(Tins::IPv4Address(res[1])), std::stoi(res[2]));
+	}
+	
+	
 	logger->info("Options:");
 	if (vm.count("netns"))
 		logger->info("  netns: {}", vm["netns"].as<std::string>());
@@ -52,6 +63,10 @@ int attack_main(int argc, char *argv[]) {
 		logger->info("  netns: <none>");
 	logger->info("  log level: {}", vm["log"].as<typename std::underlying_type<spdlog::level::level_enum>::type>());
 	logger->info("  self router-id: {}", vm["self"].as<std::string>());
+	logger->info("  targets:");
+	for (auto const& [a,b,metric] : targets) {
+		logger->info("    {} - {} -> {}", a, b, metric);
+	}
 	
 	if (vm.count("netns")) {
 		netns::enter(vm["netns"].as<std::string>());
@@ -59,7 +74,7 @@ int attack_main(int argc, char *argv[]) {
 	
 	neighborscan::discoverNeighbors();
 	
-	statemachine::init(parser::byteswap<uint32_t>(Tins::IPv4Address(vm["self"].as<std::string>())), {});
+	statemachine::init(parser::byteswap<uint32_t>(Tins::IPv4Address(vm["self"].as<std::string>())), targets);
 	
 	logger->info("Setting up sniffer...");
 	Allocators::register_allocator<IPv6, pdu::OSPFv3>(0x59);

