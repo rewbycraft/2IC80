@@ -6,7 +6,7 @@
 #include "neighborscan.h"
 #include "parser/MalformedPacketException.h"
 
-std::map<std::string, std::map<Tins::IPv6Address, std::vector<Tins::IPv6Address>>> neighbors;
+std::map<std::string, std::map<Tins::IPv6Address, std::vector<std::tuple<Tins::HWAddress<6>,Tins::IPv6Address>>>> neighbors;
 
 void neighborscan::discoverNeighbors() {
 	auto logger = spdlog::get("neighbor");
@@ -25,7 +25,7 @@ void neighborscan::discoverNeighbors() {
 			continue;
 		}
 		
-		std::map<Tins::IPv6Address, std::vector<Tins::IPv6Address>> addrs;
+		std::map<Tins::IPv6Address, std::vector<std::tuple<Tins::HWAddress<6>,Tins::IPv6Address>>> addrs;
 		
 		for (auto &addr : intf.ipv6_addresses()) {
 			
@@ -36,12 +36,13 @@ void neighborscan::discoverNeighbors() {
 			sender.send(pkt, intf);
 			
 			Tins::PDU *response;
-			std::vector<Tins::IPv6Address> neighs;
+			std::vector<std::tuple<Tins::HWAddress<6>,Tins::IPv6Address>> neighs;
 			while ((response = pkt.recv_response(sender, intf)) != 0) {
+				auto e = response->rfind_pdu<Tins::EthernetII>();
 				auto ip6 = response->rfind_pdu<Tins::IPv6>();
-				neighs.push_back(ip6.src_addr());
+				neighs.emplace_back(e.src_addr(), ip6.src_addr());
 				count++;
-				logger->debug("Discovered neighbor {} on interface {} using source address {}.", ip6.src_addr().to_string(), intf.name(), addr.address.to_string());
+				logger->debug("Discovered neighbor {} with MAC {} on interface {} using source address {}.", ip6.src_addr().to_string(), e.src_addr().to_string(), intf.name(), addr.address.to_string());
 				delete response;
 			}
 			
@@ -56,7 +57,7 @@ void neighborscan::discoverNeighbors() {
 Tins::NetworkInterface neighborscan::getInterfaceForNeighbor(Tins::IPv6Address addr) {
 	for (auto const& [intf, ips] : neighbors) {
 		for (auto const& [src, neighs] : ips) {
-			for (auto const& neigh : neighs) {
+			for (auto const& [mac,neigh] : neighs) {
 				if (neigh == addr) {
 					return intf;
 				}
@@ -69,7 +70,7 @@ Tins::NetworkInterface neighborscan::getInterfaceForNeighbor(Tins::IPv6Address a
 Tins::IPv6Address neighborscan::getSourceForNeighbor(Tins::IPv6Address addr) {
 	for (auto const&[intf, ips] : neighbors) {
 		for (auto const&[src, neighs] : ips) {
-			for (auto const &neigh : neighs) {
+			for (auto const &[mac,neigh] : neighs) {
 				if (addr == neigh) {
 					return src;
 				}
@@ -77,4 +78,17 @@ Tins::IPv6Address neighborscan::getSourceForNeighbor(Tins::IPv6Address addr) {
 		}
 	}
 	throw parser::MalformedPacketException("Cannot get source for non-neighbor.");
+}
+
+Tins::HWAddress<6> neighborscan::getMACForNeighbor(Tins::IPv6Address addr) {
+	for (auto const& [intf, ips] : neighbors) {
+		for (auto const& [src, neighs] : ips) {
+			for (auto const& [mac,neigh] : neighs) {
+				if (neigh == addr) {
+					return mac;
+				}
+			}
+		}
+	}
+	throw parser::MalformedPacketException("Cannot get MAC for non-neighbor.");
 }

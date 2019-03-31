@@ -213,7 +213,6 @@ namespace statemachine {
 				uint128_t neigh = context<Machine>().neighbor_hello->getSource();
 				ospfPkt->setDest(neigh);
 				ospfPkt->setSourceFromDest();
-				ospfPkt->setDest(tinshelper::tins_to_raw("ff02::5"));
 				ospfPkt->updateValues();
 				ospfPkt->transmit();
 			}
@@ -284,7 +283,6 @@ namespace statemachine {
 				uint128_t neigh = context<Machine>().neighbor_hello->getSource();
 				ospfPkt->setDest(neigh);
 				ospfPkt->setSourceFromDest();
-				ospfPkt->setDest(tinshelper::tins_to_raw("ff02::5"));
 				ospfPkt->updateValues();
 				ospfPkt->transmit();
 			}
@@ -444,7 +442,6 @@ namespace statemachine {
 								uint128_t neigh = context<Machine>().neighbor_hello->getSource();
 								forgedOSPFpkt->setDest(neigh);
 								forgedOSPFpkt->setSourceFromDest();
-								forgedOSPFpkt->setDest(tinshelper::tins_to_raw("ff02::5"));
 								forgedOSPFpkt->updateValues();
 							}
 							
@@ -471,7 +468,6 @@ namespace statemachine {
 								uint128_t neigh = context<Machine>().neighbor_hello->getSource();
 								forgedOSPFFBpkt->setDest(neigh);
 								forgedOSPFFBpkt->setSourceFromDest();
-								forgedOSPFFBpkt->setDest(tinshelper::tins_to_raw("ff02::5"));
 								forgedOSPFFBpkt->updateValues();
 							}
 							

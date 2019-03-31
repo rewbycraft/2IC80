@@ -167,7 +167,7 @@ void parser::OSPFv3Packet::transmit() const {
 		}
 		
 		if (is_ll) {
-			mac = neighborscan::getInterfaceForNeighbor(pkt.dst_addr()).hw_address();
+			mac = neighborscan::getMACForNeighbor(pkt.dst_addr());
 		}
 		
 		auto e = Tins::EthernetII(mac, intf.hw_address()) / pkt;

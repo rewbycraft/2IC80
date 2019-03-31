@@ -10,6 +10,7 @@
 namespace neighborscan {
 	Tins::NetworkInterface getInterfaceForNeighbor(Tins::IPv6Address);
 	Tins::IPv6Address getSourceForNeighbor(Tins::IPv6Address);
+	Tins::HWAddress<6> getMACForNeighbor(Tins::IPv6Address);
 	void discoverNeighbors();
 }
 
