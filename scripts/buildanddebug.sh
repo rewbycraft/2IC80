@@ -11,4 +11,4 @@ cd "$(dirname "$(realpath "$0")")"/..
 export BUILDTYPE=Debug
 ./scripts/build.sh
 
-exec sudo ./scripts/debug.sh -l 0 -n c2 -t 1.1.2.1,1.1.1.1,10000 1.1.2.1,1.1.1.2,10000
+exec sudo ./scripts/debug.sh -l 1 -n c2 -t 1.1.2.1,1.1.1.1,10000 1.1.2.1,1.1.1.2,10000

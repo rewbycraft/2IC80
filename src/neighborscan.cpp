@@ -41,7 +41,7 @@ void neighborscan::discoverNeighbors() {
 				auto ip6 = response->rfind_pdu<Tins::IPv6>();
 				neighs.push_back(ip6.src_addr());
 				count++;
-				logger->info("Discovered neighbor {} on interface {} using source address {}.", ip6.src_addr().to_string(), intf.name(), addr.address.to_string());
+				logger->debug("Discovered neighbor {} on interface {} using source address {}.", ip6.src_addr().to_string(), intf.name(), addr.address.to_string());
 				delete response;
 			}
 			
