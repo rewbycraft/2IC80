@@ -11,7 +11,7 @@ std::map<std::string, std::map<Tins::IPv6Address, std::vector<std::tuple<Tins::H
 void neighborscan::discoverNeighbors() {
 	auto logger = spdlog::get("neighbor");
 	neighbors.clear();
-	Tins::PacketSender sender;
+	Tins::PacketSender sender(Tins::NetworkInterface(), 1);
 	logger->info("Performing neighbor discovery on all interfaces...");
 	size_t count = 0;
 	for (auto &_intf : Tins::Utils::network_interfaces()) {

