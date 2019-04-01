@@ -180,7 +180,7 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
 
 
     \lsubsection{Attack execution}{attack_exec}
-    The router we have compromised is used as backup link, so the links are very costly and is therefore not choosen as a node in any path. Hence initially we cannot control any packets in the network. To change this, we need to convince the other routers that our connection is the fastest one. We can achieve this by `telling' the other routers that our route is fast and any other alternative route is long. If these routers believe us, then all packets are routed through our router, hence resulting in full control over the network.
+    The router we have compromised is used as backup link, so the links are very costly and is therefore not choosen as a node in any path. Hence initially we cannot control any packets in the network. To change this, we need to convince the other routers that our connection is the fastest one. We can achieve this by `telling' the other routers that our route has the lowest cost. If these routers believe us, then all packets are routed through our router, hence resulting in full control over the network.
 
     We can `tell' the other routers the weight of a link using a \textit{Link State Update} (LSU) packet. However, OSPF has a nasty fightback mechanism which will directly repair the original weight if a faulty weight was announced.
 
@@ -220,7 +220,7 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
 
     The second condition can be easily achieved by first creating both packets and then sending them right after eachother.
 
-    The first condition is a bit harder. First of all, we can predict the fightback LSA, including the priority fields (\textit{Sequence ID} and \textit{Checksum}). The \textit{Sequence ID} is easy to forge, but the checksum is impossible if we are not allowed any content of the LSA. Luckily, there are some reserved zero bytes which are documented as \\``\text{Should be set to zero ... and must be ignored when receiv[ed]}''\cite{rfc-5340}{appendix A.3.1}. Now we can set the checksum to the predetermined value and make it a valid checksum by altering these bits.
+    The first condition is a bit harder. First of all, we can predict the fightback LSA, including the priority fields (\textit{Sequence ID} and \textit{Checksum}). The \textit{Sequence ID} is easy to forge, but the checksum is impossible if we are not allowed any content of the LSA. Luckily, there are some reserved zero bytes which are documented as \\``\text{Should be set to zero [...] and must be ignored when receiv[ed]}''\cite{rfc-5340}{appendix A.3.1}. Now we can set the checksum to the predetermined value and make it a valid checksum by altering these bits.
 
     In this way we have created a packet which is regarded equal compared to the fightback LSA, but also contains the value we want the link to be. After sending both packets, the targeded router makes a fightback LSA and floods it in the network. However, since our packet was first and all routers believe they just found a copy of the same LSA. Therefore they ignore it, resulting in our forged link weight being accepted and the correction being rejected.
 
