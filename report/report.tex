@@ -125,9 +125,8 @@
 			\item This server has been connected via a GRE tunnel to C2.
 		\end{itemize}
 		
-	
     \lsection{Protocol}{protocol}
-    		Before coding up an attack, we must first understand the protocol and discover where it's weaknesses and strengths are. The results of this orientative phase are documented in our wiki \cite{wiki}.\\
+    		Before coding up an attack, we must first understand the protocol and discover where it's weaknesses and strengths are. The results of this orientative phase are documented in our wiki \cite{wiki}.
     		\lsubsection{OSPFv3 Packet}{ospfv3_packet}
 			The most important (sub-)packates of the protocol are:
 			\begin{itemize}
@@ -143,7 +142,7 @@
 					Packet for acknowledging Link State Update packets
 			\end{itemize}
 		\lsubsection{LSA Packet}{lsa_packet}
-			All \textit{Link State} (LS) OSPF packets contain \textit{Link State Anouncement} (LSA) packets. There are multiple LSA types (see our wiki\cite{wiki} for detailed info), however the most important fields are:
+			All \textit{Link State} (LS) OSPF packets which we used contain \textit{Link State Anouncement} (LSA) packets. There are multiple LSA types (see our wiki\cite{wiki} for detailed info), however the most important fields are:
 			\begin{itemize}
 				\item \textbf{Age}\\
 					How long a package has lived so far.
