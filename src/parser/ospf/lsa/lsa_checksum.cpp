@@ -138,7 +138,7 @@ std::optional<std::vector<std::pair<std::size_t, std::uint8_t>>> parser::checksu
     int delta_c1 = checksumPart.second - revertedChecksum.second;
     int l = int(data.size() % 255);
     std::size_t i, j;
-    int x, y, div_dx, div_dy;
+    int x, y, inv;
     bool found = false;
 
     for (i = 0; i < targets.size(); i++) {
@@ -147,44 +147,25 @@ std::optional<std::vector<std::pair<std::size_t, std::uint8_t>>> parser::checksu
             y = int(targets[j].first % 255);
 
             // Determine the divisor.
-            //int div = (y - x) * l;
-            //int div = mod((y - x) * (l - 1), 255);
             int div = y - x;
 
-            // Determine the upper parts of the division.
-            int delta_x = mod( (l - y) * delta_c0 - delta_c1, 255);
-            int delta_y = mod(-(l - x) * delta_c0 + delta_c1, 255);
-            /*
-            div_dx = delta_x / div;
-            div_dy = delta_y / div;
-
-            if (div_dx * div == delta_x && div_dx * div == delta_y) {
-                found = true;
-                break;
-            }
-            */
-            // Calculate the inverse for the division.
-            int inv, dummy;
+            // Calculate the inverse for the divisor.
+            int dummy;
             int gcd = gcdExtended(div, 255, &inv, &dummy);
-            // Check if inverse exists.
+            // If it exists, set found flag, calculate delta's and break.
             if (gcd == 1) {
                 found = true;
-                div_dx = delta_x * inv;
-                div_dy = delta_y * inv;
                 break;
             }
         }
         if (found) break;
     }
+    int delta_x = mod( (l - y) * delta_c0 - delta_c1, 255) * inv;
+    int delta_y = mod(-(l - x) * delta_c0 + delta_c1, 255) * inv;
 
     if (!found) return { };
-    //int delta_x = mod(-(l - y) * delta_c0 + y * delta_c1, 255) * inv;
-    //int delta_y = mod( (l - x) * delta_c0 - x * delta_c1, 255) * inv;
-    //int delta_x = mod(-(l - y - 1) * delta_c0 + y * delta_c1, 255) * inv;
-    //int delta_y = mod( (l - x - 1) * delta_c0 - x * delta_c1, 255) * inv;
-
-    targets[i].second = uint8_t(mod(div_dx + targets[i].second, 255));
-    targets[j].second = uint8_t(mod(div_dy + targets[j].second, 255));
+    targets[i].second = uint8_t(mod(delta_x + targets[i].second, 255));
+    targets[j].second = uint8_t(mod(delta_y + targets[j].second, 255));
 
     return { targets };
 
