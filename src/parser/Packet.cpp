@@ -7,17 +7,12 @@
 
 using namespace parser;
 
-Packet::Packet(const bytevector& data) {
 
-}
+Packet::Packet() { }
 
-Packet::Packet() {
+Packet::Packet(const bytevector& data) { }
 
-}
-
-Packet::~Packet() {
-
-}
+Packet::~Packet() { }
 
 const std::string Packet::toString() const {
 	std::stringstream ss;

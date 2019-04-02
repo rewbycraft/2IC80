@@ -13,9 +13,7 @@
 #include "lsa_checksum.h"
 
 
-parser::LSAPacket::LSAPacket() : Packet() {
-
-}
+parser::LSAPacket::LSAPacket() : Packet() { }
 
 parser::LSAPacket::LSAPacket(const parser::bytevector &data) : Packet(data) {
 	const parser::bytevector remainder = parser::deserializeObject(header, data);

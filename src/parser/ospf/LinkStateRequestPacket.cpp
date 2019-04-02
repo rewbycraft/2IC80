@@ -7,9 +7,8 @@
 #include "../internal.h"
 #include "../../util.h"
 
-parser::LinkStateRequestPacket::LinkStateRequestPacket() : Packet() {
 
-}
+parser::LinkStateRequestPacket::LinkStateRequestPacket() : Packet() { }
 
 parser::LinkStateRequestPacket::LinkStateRequestPacket(const parser::bytevector &data) : Packet(data) {
 	parser::bytevector c(data);
@@ -50,6 +49,4 @@ void parser::LinkStateRequestPacket::toString(const std::function<void(const std
 	}
 }
 
-void parser::LinkStateRequestPacket::updateValues() {
-
-}
+void parser::LinkStateRequestPacket::updateValues() { }

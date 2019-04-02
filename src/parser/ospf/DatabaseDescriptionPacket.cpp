@@ -6,9 +6,8 @@
 #include "DatabaseDescriptionPacket.h"
 #include "../../util.h"
 
-parser::DatabaseDescriptionPacket::DatabaseDescriptionPacket() : Packet() {
 
-}
+parser::DatabaseDescriptionPacket::DatabaseDescriptionPacket() : Packet() { }
 
 parser::DatabaseDescriptionPacket::DatabaseDescriptionPacket(const parser::bytevector &data) : Packet(data) {
 	auto remainder = parser::deserializeObject(header, data);
@@ -60,6 +59,4 @@ void parser::DatabaseDescriptionPacket::toString(const std::function<void(const 
 	}
 }
 
-void parser::DatabaseDescriptionPacket::updateValues() {
-
-}
+void parser::DatabaseDescriptionPacket::updateValues() { }

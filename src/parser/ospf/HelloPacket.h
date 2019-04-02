@@ -8,6 +8,7 @@
 #include "../Packet.h"
 #include <boost/fusion/include/adapt_struct.hpp>
 
+
 namespace parser {
 	class HelloPacket : public Packet {
 	public:
@@ -19,25 +20,43 @@ namespace parser {
 			uint32_t designated_router_id;
 			uint32_t backup_designated_router_id;
 		} Header;
+
 	private:
 		std::vector<uint32_t> neighbors;
 		Header header;
+
 	public:
 		
 		HelloPacket();
 		
-		HelloPacket(const bytevector &data);
+		explicit HelloPacket(const bytevector &data);
 		
 		const bytevector serialize() const override;
-		
+
+		/**
+		 * @return a vector containing the neighbor IDs of this packet.
+		 */
 		const std::vector<uint32_t> &getNeighbors() const;
-		
+
+		/**
+		 * Sets the neighbor IDs of this packet.
+		 *
+		 * @param neighbors the vector containing the new neighbors.
+		 */
 		void setNeighbors(const std::vector<uint32_t> &neighbors);
-		
+
+		/**
+		 * @return the header of this packet.
+		 */
 		const Header &getHeader() const;
-		
+
+		/**
+		 * Sets the header of this packet.
+		 *
+		 * @param header the new header of this packet.
+		 */
 		void setHeader(const Header &header);
-		
+
 		void toString(const std::function<void(const std::string &)> &printer) const override;
 		
 		void updateValues() override;

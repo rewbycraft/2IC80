@@ -8,7 +8,12 @@
 #include <exception>
 #include <string>
 
+
 namespace parser {
+	/**
+	 * This exception should be thrown when a malformed packet
+	 * was found during parsing.
+	 */
 	class MalformedPacketException : public std::exception {
 		const std::string reason;
 	public:

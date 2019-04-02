@@ -8,41 +8,35 @@
 #include <vector>
 #include "../../Packet.h"
 
+
 namespace parser {
 	namespace checksum {
 		namespace lsa {
 			/**
-			 * Modifies the given {@code targets} fields to compensate for the changed {@code change} fields
-			 * to keep the same checksum. Note that the {@code change} fields are only replaced
-			 * by {@code newValues} if, and only if, there exists values for the {@code targets} fields
-			 * such that the checksum remains equal after the change. Otherwise no input values are changed.
+			 * Calculates the LSA checksum over the given data.
+			 * Note that the given data MUST be in the right order.
 			 *
-			 * @param targets a vector of pairs where the first element denotes the byte
-			 *     which can be modified, and the second the index of this byte relative
-			 *     to the beginning of the LSA header (first byte is at position 1).
-			 * @param change a vector of pairs where the first element denotes the byte
-			 *     which should be modified, and the second the index of this byte relative
-			 *     to the beginning of the LSA header.
-			 * @param newValues a vector denoting the new values to set for the bytes
-			 *     specified in {@code changed}.
+			 * @param data a serialized bytevector of a LSA packet.
+			 * @return the LSA fletcher-16 checksum of the LSA packet.
+			 */
+			std::uint16_t calcChecksum(const parser::bytevector &data);
+
+			/**
+			 * Returns a suggestion to modify the given {@code data} bytevector such that
+			 * calculating the LSA fletcher-16 checksum will result in {@code targetChecksum}
+			 * when only using the indices {@code targetIndices} in {@code data}.
 			 *
-			 * @return An optional vector containing pairs where the first value contains the pointer and
-			 *     the second the new data which should be changed in the data stream.
+			 * @param data the bytevector representing the serialisation of the LSA packet.
+			 * @param targetIndices the indices of the bytes in {@code data} which are allowed
+			 *     to be modified.
+			 * @param targetChecksum the checksum which should be foreged.
+			 * @return A vector containing pairs where the first value contains the pointer and
+			 *     the second the new data which should be changed in the data stream, or
+			 *     {@link std::nullopt} if it is not possible to do so.
 			 */
 			std::optional<std::vector<std::pair<std::size_t, std::uint8_t>>> modifyChecksum(
 					const parser::bytevector &data, const std::vector<std::size_t> &targetIndices,
 					const std::uint16_t &targetChecksum);
-
-			/**
-			 * Calculates the LSA checksum over the given data.
-			 * Note that the given data MUST be in the right order.
-			 *
-			 * @param data a vector of pairs where the first element denotes
-			 *     a pointer each (sub) header, and the second element denotes
-			 *     the length of that header.
-			 * @return the checksum of the LSA header.
-			 */
-			std::uint16_t calcChecksum(const parser::bytevector &data);
 
 			/**
 			 * Verifies the LSA checksum.

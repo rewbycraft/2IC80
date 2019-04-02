@@ -11,6 +11,7 @@
 #include <type_traits>
 #include <boost/fusion/include/adapt_struct.hpp>
 
+
 namespace parser {
 	class OSPFv3Packet : public Packet, public std::enable_shared_from_this<OSPFv3Packet> {
 	public:
@@ -32,38 +33,84 @@ namespace parser {
 		Header header;
 		std::shared_ptr<Packet> subpacket;
 		uint128_t source = 0, dest = 0;
+
 	public:
 		OSPFv3Packet();
-		
-		OSPFv3Packet(const bytevector& data);
+
+		explicit OSPFv3Packet(const bytevector& data);
 		
 		const bytevector serialize() const override;
-		
+
+		/**
+		 * @return the header of this OSPF packet.
+		 */
 		const Header &getHeader() const;
-		
+
+		/**
+		 * Sets the header of this OSPF packet.
+		 *
+		 * @param header the new header.
+		 */
 		void setHeader(const Header &header);
-		
+
+		/**
+		 * @return a pointer to the subpacket of this OSPF packet.
+		 */
 		const std::shared_ptr<Packet> &getSubpacket() const;
-		
+
+		/**
+		 * Sets the subpacket of this OSPF packet.
+		 *
+		 * @param subpacket the new subpacket.
+		 */
 		void setSubpacket(const std::shared_ptr<Packet> &subpacket);
-		
+
+		/**
+		 * Recomputes the checksum in the header of this OSPF packet
+		 * using the given IPv6 header.
+		 *
+		 * @param v6Header the IPv6 header useded in the checksum calculations.
+		 */
 		void recomputeChecksum(const Tins::IPv6& v6Header);
-		
-		void toString(const std::function<void(const std::string&)>&) const override;
-		
-		void updateValues() override;
-		
+
+		/**
+		 * @return the source IPv6 address of this OSPF packet.
+		 */
 		uint128_t getSource() const;
-		
+
+		/**
+		 * Sets the IPv6 source of this OSPF packet.
+		 *
+		 * @param source the new IPv6 source.
+		 */
 		void setSource(uint128_t source);
-		
+
+		/**
+		 * @return the destination IPv6 address of this OSPF packet.
+		 */
 		uint128_t getDest() const;
-		
+
+		/**
+		 * Sets the IPv6 destination of this OSPF packet.
+		 *
+		 * @param dest the new IPv6 destination.
+		 */
 		void setDest(uint128_t dest);
-		
+
+		/**
+		 * Sets a matching destination IPv6 address for the
+		 * current IPv6 source address.
+		 */
 		void setSourceFromDest();
-		
+
+		/**
+		 * Transmits the packet over the link with the current configuration.
+		 */
 		void transmit() const;
+
+		void toString(const std::function<void(const std::string &)> &printer) const override;
+
+		void updateValues() override;
 	};
 }
 

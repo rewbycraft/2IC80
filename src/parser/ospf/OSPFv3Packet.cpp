@@ -16,9 +16,8 @@
 #include "../../pdus/OSPFv3.h"
 #include "../../neighborscan.h"
 
-parser::OSPFv3Packet::OSPFv3Packet() : Packet() {
 
-}
+parser::OSPFv3Packet::OSPFv3Packet() : Packet() { }
 
 parser::OSPFv3Packet::OSPFv3Packet(const parser::bytevector &data) : Packet(data) {
 	const parser::bytevector sub = parser::deserializeObject(header, data);
@@ -78,7 +77,7 @@ void parser::OSPFv3Packet::setSubpacket(const std::shared_ptr<parser::Packet> &s
 }
 
 void parser::OSPFv3Packet::recomputeChecksum(const Tins::IPv6 &) {
-
+	throw exception_base("To be implemented");
 }
 
 void parser::OSPFv3Packet::toString(const std::function<void(const std::string &)> &printer) const {

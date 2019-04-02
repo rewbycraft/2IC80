@@ -7,9 +7,8 @@
 #include "../../internal.h"
 #include "../../../util.h"
 
-parser::RouterLSAPacket::RouterLSAPacket() : Packet() {
 
-}
+parser::RouterLSAPacket::RouterLSAPacket() : Packet() { }
 
 parser::RouterLSAPacket::RouterLSAPacket(const parser::bytevector &data) : Packet(data) {
 	parser::bytevector remainder = parser::deserializeObject(header, data);
@@ -65,9 +64,7 @@ void parser::RouterLSAPacket::toString(const std::function<void(const std::strin
 	}
 }
 
-void parser::RouterLSAPacket::updateValues() {
-
-}
+void parser::RouterLSAPacket::updateValues() { }
 
 std::vector<std::size_t> parser::RouterLSAPacket::getEmptyByteIndices() {
 	return std::vector<std::size_t>{1, 5};

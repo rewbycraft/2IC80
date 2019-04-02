@@ -11,6 +11,10 @@
 namespace parser {
     class ChecksumInterface {
     public:
+        /**
+         * @return a vector containing the indices of the bytes
+         *     in this packet which are allowed to be modified.
+         */
         virtual std::vector<std::size_t> getEmptyByteIndices();
     };
 }

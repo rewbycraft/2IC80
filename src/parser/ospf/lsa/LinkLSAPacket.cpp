@@ -5,9 +5,8 @@
 #include "LinkLSAPacket.h"
 #include "../../../util.h"
 
-parser::LinkLSAPacket::LinkLSAPacket() : Packet() {
 
-}
+parser::LinkLSAPacket::LinkLSAPacket() : Packet() { }
 
 parser::LinkLSAPacket::LinkLSAPacket(const parser::bytevector &data) : Packet(data) {
 	auto remainder = parser::deserializeObject(header, data);

@@ -6,9 +6,8 @@
 #include "../../../util.h"
 #include <vector>
 
-parser::ASExternalLSAPacket::ASExternalLSAPacket() : Packet() {
 
-}
+parser::ASExternalLSAPacket::ASExternalLSAPacket() : Packet() { }
 
 parser::ASExternalLSAPacket::ASExternalLSAPacket(const parser::bytevector &data) : Packet(data) {
 	auto remainder = parser::deserializeObject(header._options, data);

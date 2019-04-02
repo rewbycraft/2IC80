@@ -6,9 +6,8 @@
 #include "../MalformedPacketException.h"
 #include "../../util.h"
 
-parser::LinkStateAcknowledgementPacket::LinkStateAcknowledgementPacket() : Packet() {
 
-}
+parser::LinkStateAcknowledgementPacket::LinkStateAcknowledgementPacket() : Packet() { }
 
 parser::LinkStateAcknowledgementPacket::LinkStateAcknowledgementPacket(const parser::bytevector &data) : Packet(data) {
 	parser::bytevector remainder(data);
@@ -54,6 +53,4 @@ void parser::LinkStateAcknowledgementPacket::toString(const std::function<void(c
 	}
 }
 
-void parser::LinkStateAcknowledgementPacket::updateValues() {
-
-}
+void parser::LinkStateAcknowledgementPacket::updateValues() { }

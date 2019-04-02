@@ -8,7 +8,7 @@
 #include <vector>
 
 
-parser::IntraAreaPrefixLSAPacket::IntraAreaPrefixLSAPacket() {}
+parser::IntraAreaPrefixLSAPacket::IntraAreaPrefixLSAPacket() { };
 
 parser::IntraAreaPrefixLSAPacket::IntraAreaPrefixLSAPacket(const parser::bytevector &data) : Packet(data) {
 	parser::bytevector remainder = parser::deserializeObject(header, data);
@@ -24,7 +24,6 @@ parser::IntraAreaPrefixLSAPacket::IntraAreaPrefixLSAPacket(const parser::bytevec
 	
 	if (prefixes.size() !=header.num_prefixes)
 		throw MalformedPacketException("Wrong amount of prefixes.");
-	
 }
 
 const parser::bytevector parser::IntraAreaPrefixLSAPacket::serialize() const {

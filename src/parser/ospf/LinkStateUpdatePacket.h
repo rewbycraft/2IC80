@@ -7,19 +7,29 @@
 
 #include "lsa/LSAPacket.h"
 
+
 namespace parser {
 	class LinkStateUpdatePacket : public Packet {
 	private:
 		std::vector<std::shared_ptr<LSAPacket>> lsas;
+
 	public:
 		LinkStateUpdatePacket();
 		
-		LinkStateUpdatePacket(const bytevector &data);
+		explicit LinkStateUpdatePacket(const bytevector &data);
 		
 		const bytevector serialize() const override;
-		
+
+		/**
+		 * @return vector containing pointers to the LSAs of this packet.
+		 */
 		const std::vector<std::shared_ptr<LSAPacket>> &getLsas() const;
-		
+
+		/**
+		 * Sets the LSAs of this packet.
+		 *
+		 * @param lsas vector containing pointers to the new LSAs.
+		 */
 		void setLsas(const std::vector<std::shared_ptr<LSAPacket>> &lsas);
 		
 		void toString(const std::function<void(const std::string &)> &printer) const override;

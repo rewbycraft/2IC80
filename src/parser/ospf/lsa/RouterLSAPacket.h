@@ -8,6 +8,7 @@
 #include "LSAPacket.h"
 #include "ChecksumInterface.h"
 
+
 namespace parser {
 	class RouterLSAPacket : public Packet, public ChecksumInterface {
 	public:
@@ -22,24 +23,42 @@ namespace parser {
 			uint32_t neighbor_interface_id;
 			uint32_t neighbor_router_id;
 		} InterfaceHeader;
+
 	private:
 		Header header;
 		std::vector<InterfaceHeader> interfaces;
+
 	public:
 		RouterLSAPacket();
 		
-		RouterLSAPacket(const bytevector &data);
+		explicit RouterLSAPacket(const bytevector &data);
 		
 		const bytevector serialize() const override;
-	
+
+		/**
+		 * @return the header of this packet.
+		 */
 		const Header &getHeader() const;
-		
+
+		/**
+		 * Sets the header of this packet.
+		 *
+		 * @param header the new header of this packet.
+		 */
 		void setHeader(const Header &header);
-		
+
+		/**
+		 * @return a vector containing the headers of the interfaces.
+		 */
 		const std::vector<InterfaceHeader> &getInterfaces() const;
-		
+
+		/**
+		 * Sets the headers of the interfaces.
+		 *
+		 * @param interfaces the vector containing the new headers.
+		 */
 		void setInterfaces(const std::vector<InterfaceHeader> &interfaces);
-		
+
 		void toString(const std::function<void(const std::string &)> &printer) const override;
 		
 		void updateValues() override;

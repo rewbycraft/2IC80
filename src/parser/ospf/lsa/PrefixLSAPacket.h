@@ -8,8 +8,9 @@
 #include "LSAPacket.h"
 #include "ChecksumInterface.h"
 
+
 namespace parser {
-class PrefixLSAPacket : public Packet, public ChecksumInterface {
+    class PrefixLSAPacket : public Packet, public ChecksumInterface {
 	public:
 		typedef struct {
 			uint8_t length;
@@ -17,19 +18,29 @@ class PrefixLSAPacket : public Packet, public ChecksumInterface {
 			uint16_t special;
 			uint128_t address;
 		} Header;
+
 	private:
 		Header header;
+
 	public:
 		PrefixLSAPacket();
 		
-		PrefixLSAPacket(const bytevector &data);
+		explicit PrefixLSAPacket(const bytevector &data);
 		
 		const bytevector serialize() const override;
-		
+
+		/**
+		 * @return the header of this packet.
+		 */
 		const Header &getHeader() const;
-		
+
+		/**
+		 * Sets the header of the packet.
+		 *
+		 * @param header the new header.
+		 */
 		void setHeader(const Header &header);
-		
+
 		void toString(const std::function<void(const std::string &)> &printer) const override;
 		
 		void updateValues() override;

@@ -8,9 +8,8 @@
 #include "../MalformedPacketException.h"
 #include "../../util.h"
 
-parser::HelloPacket::HelloPacket() : Packet() {
 
-}
+parser::HelloPacket::HelloPacket() : Packet() { }
 
 parser::HelloPacket::HelloPacket(const parser::bytevector &data) : Packet(data) {
 	const parser::bytevector rawNeighbors = parser::deserializeObject(header, data);
@@ -18,7 +17,8 @@ parser::HelloPacket::HelloPacket(const parser::bytevector &data) : Packet(data) 
 		throw parser::MalformedPacketException("Invalid neighbours.");
 
 	for (unsigned long i = 0; i < rawNeighbors.size(); i += 4) {
-		uint32_t neighbor = (rawNeighbors[i] << 24) + (rawNeighbors[i+1] << 16) + (rawNeighbors[i+2] << 8) + rawNeighbors[i+3];
+		uint32_t neighbor = (rawNeighbors[i] << 24) + (rawNeighbors[i+1] << 16)
+				+ (rawNeighbors[i+2] << 8) + rawNeighbors[i+3];
 		neighbors.push_back(neighbor);
 	}
 }
@@ -27,8 +27,7 @@ const parser::bytevector parser::HelloPacket::serialize() const {
 	parser::bytevector result;
 	serializeObject(result, header);
 	
-	for (const uint32_t& neighbor : neighbors)
-	{
+	for (const uint32_t& neighbor : neighbors) {
 		result.push_back(static_cast<uint8_t>((neighbor >> 24) & 0xFF));
 		result.push_back(static_cast<uint8_t>((neighbor >> 16) & 0xFF));
 		result.push_back(static_cast<uint8_t>((neighbor >> 8) & 0xFF));
@@ -69,6 +68,4 @@ void parser::HelloPacket::toString(const std::function<void(const std::string &)
 	}
 }
 
-void parser::HelloPacket::updateValues() {
-
-}
+void parser::HelloPacket::updateValues() { }

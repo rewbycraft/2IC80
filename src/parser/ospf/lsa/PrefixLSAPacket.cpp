@@ -7,9 +7,8 @@
 #include <tins/ipv6_address.h>
 #include "../../../util.h"
 
-parser::PrefixLSAPacket::PrefixLSAPacket() : Packet() {
 
-}
+parser::PrefixLSAPacket::PrefixLSAPacket() : Packet() { }
 
 parser::PrefixLSAPacket::PrefixLSAPacket(const parser::bytevector &data) : Packet(data) {
 	parser::bytevector copy = data;
@@ -59,9 +58,7 @@ void parser::PrefixLSAPacket::toString(const std::function<void(const std::strin
 	printer("Address: " + util::to_hex_string(header.address));
 }
 
-void parser::PrefixLSAPacket::updateValues() {
-
-}
+void parser::PrefixLSAPacket::updateValues() { }
 
 std::pair<std::shared_ptr<parser::PrefixLSAPacket>, const parser::bytevector>
 extractPrefix(const parser::bytevector &input) {

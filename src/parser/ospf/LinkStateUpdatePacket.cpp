@@ -6,9 +6,8 @@
 #include "../internal.h"
 #include "../../util.h"
 
-parser::LinkStateUpdatePacket::LinkStateUpdatePacket() : Packet() {
 
-}
+parser::LinkStateUpdatePacket::LinkStateUpdatePacket() : Packet() { }
 
 parser::LinkStateUpdatePacket::LinkStateUpdatePacket(const parser::bytevector &data) : Packet(data) {
 	uint32_t numLsas;
