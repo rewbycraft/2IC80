@@ -28,6 +28,7 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
 \usepackage{multido}         % For using multido
 \usepackage{graphicx}        % For using pictures
 \usepackage{float}
+\usepackage{cases}           % For using fancy case statements
 
 \pagestyle{fancy}
 \renewcommand{\sectionmark}[1]{\markright{#1}}
@@ -110,12 +111,6 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
     The plan is simple: If we can hijack \textit{Example Corp}'s /48 inside of \textit{Dapper Inc.}'s network and re-route it to a server under our control, we can capture the passwords of \textit{Dapper Inc.}'s accountants and confirm or deny that \textit{Dapper Inc.} is paying \textit{Gentco}' s supplier by accessing \textit{Dapper Inc's} financial reconds.
 
 
-    \lsection{Environmental setup}{env_setup}
-    TODO:
-    - Describe the setup of the environment (show picture).
-    - Explain rationale behind it.
-
-
     \lsection{Objectives}{objectives}
     The main objective is to spy on and redirect traffic in \textit{Dapper Inc.}'s network. To achieve this, we assume the following case:
     \begin{itemize}
@@ -124,6 +119,13 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
         \item Send traffic destined for \textit{Example Corp} to an attacker-controlled server.
         \item This server has been connected via a GRE tunnel to C2.
     \end{itemize}
+
+
+    \lsection{Environmental setup}{env_setup}
+    TODO:
+    - Describe the setup of the environment (show picture).
+    - Explain rationale behind it.
+
 
     \lsection{Protocol}{protocol}
     Before coding up an attack, we must first understand the protocol and discover where it's weaknesses and strengths are. The results of this orientative phase are documented in our wiki \cite{wiki}.
@@ -177,22 +179,23 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
 
 
     \lsection{Attack engineering}{attack}
-
-
-    \lsubsection{Attack execution}{attack_exec}
     The router we have compromised is used as backup link, so the links are very costly and is therefore not choosen as a node in any path. Hence initially we cannot control any packets in the network. To change this, we need to convince the other routers that our connection is the fastest one. We can achieve this by `telling' the other routers that our route has the lowest cost. If these routers believe us, then all packets are routed through our router, hence resulting in full control over the network.
 
-    We can `tell' the other routers the weight of a link using a \textit{Link State Update} (LSU) packet. However, OSPF has a nasty fightback mechanism which will directly repair the original weight if a faulty weight was announced.
+    We can `tell' the other routers the weight of a link using a \textit{Link State Update} (LSU) packet. If they believe our update message, then they will also update their lowest cost path accordingly.
+    
+    In this way we can let routers dislike certain routes and redirect all traffic to our router. Once a message is send to our router, we can send to our server outside the network. In this way we have obtained a man in the middle position inside the network.
+    
+    However, OSPF has a nasty fightback mechanism which will directly repair the original weight if a faulty weight was announced. We also need some additional information regarding the network. Both will be discussed in this section.
 
     \lsubsection{Attack preperation}{attack_prep}
     Before we can perform an attack on an OSPF network, we need to gather some information about the network.
     In order to pull of our attack, we need to know a number of things about the network topology:
     \begin{itemize}
         \item A list of links to attack.
-        \item The router-id, address and interface on which at least one OSPF neighbor of the router we control is located.
+        \item The router ID, address and interface on which at least one OSPF neighbor of the router we control is located.
 
         This neighbor must \textit{not} be one of the endpoints of a link we wish to attack.
-        We need a "3rd party" neighbor who will flood any \textit{Link State Update} we send it to the rest of the network.
+        We need a "thrid party" neighbor who will flood any \textit{Link State Update} we send it to the rest of the network.
         \item A copy of the link state database.
 
         Although we know which links to attack, we need to have a copy of the actual most-recent LSA of all routers involved in the attack.
@@ -209,29 +212,71 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
     However, the DataBase Exchange does not contain the actual LSAs that we need.
     Luckily it contains enough information for us to create a Link State Request packet to request the neighbor to transmit its entire database.
 
-    \lsubsubsection{Fightback mechanism}{fightback}
-    The fightback mechanism is initiated when a router receives a LSU packet which states that it was originated by the receiving router, and is newer than the last LSA the router has send for that link (see \textit{Section \ref{sec:lsa_priority}}). This router then creates a LSU which newer than the received LSU and with the correct data. By doing so, the network is secure against packet corruption, but is it also secure agains an attacker?
+    \lsubsection{Fightback mechanism}{fightback}
+    The fightback mechanism is initiated when a router receives a LSU packet which states that it was originated by the receiving router, and is newer than the last LSA the router has send for that link (see \textit{Section \ref{sec:lsa_priority}}). This router then creates a LSU which is newer than the received LSU and with the correct data. By doing so, the network is secure against packet corruption, but is it also secure agains an attacker?
 
-    Now there are three approaches in attaching the fightback mechanism. The first is to prevent the fightback from being sent. This is almost impossible since all LSA's are flooded to all routers.
+    There are three main approaches in attacking the fightback mechanism. The first is to prevent the fightback from being sent. This is impossible since it requires us to have control over all links to this router, which we don't have.
 
-    The second approach is to not let the fightback LSA reach the other routers. This is even harder than the first approach, as it is basically the same but then for all routers in the network.
+    The second approach is to not let the fightback LSA reach the other routers. This is alsmost the same as the first approach, since it requires us to have control over all links from this router.
 
-    That leaves us with the third approach, which is letting the other routers ignore the fightback LSA. This already happens naturally when two routers flood the same LSA to another third router. In this case, the second ariving packet will be ignored (see \textit{Section \ref{sec:lsa_priority}}). So we have to forge an LSA which is regarded equal compared to the fightback LSA -- but has the modified link weight -- and it must arrives earlier than the fightback LSA.
+    That leaves us with the third approach, which is letting the other routers ignore the fightback LSA. This already happens naturally when two routers flood the same LSA to another third router. In this case, the second arriving packet will be ignored (see \textit{Section \ref{sec:lsa_priority}}). So we have to forge an LSA which is regarded equal compared to the fightback LSA -- but has the modified link weight -- and it must arrives earlier than the fightback LSA.
+    
+    Since every router ignores LSAs for a certain link for a certain amount of time after receiving one, the fightback must wait for this timeout to pass. To be sure the timeout has passed on all routers in the network, some extra wait time is introduced for the fightback LSA. We can use this to ensure that our packet will arrive before the fightback.
 
-    The second condition can be easily achieved by first creating both packets and then sending them right after eachother.
+	\lsubsection{Checksum}{checksum}
+    The first condition is a bit harder. First of all, we can predict the exact fightback LSA, especialy the priority fields (\textit{Sequence ID} and \textit{Checksum}). The \textit{Sequence ID} is easy to forge, but forging the checksum is impossible if we are not allowed to modify any content of the LSA. Luckily, there are some reserved zero bytes which are documented as ``\text{Should be set to zero [...] and must be ignored when receiv[ed]}'' \cite[appendix A.3.1]{rfc-5340}.
+    
+    The \textit{Fletcher-16 bit}\cite{fletcher} checksum is used as basis checksum algorithm Afterwards, some extra computations are added to simplify the verification algorithm. This last step can be easily reverse engineered, so this step will be ignored in the rest of the paper for the sake of simplicity. The fletcher checksum however requires some linear algebra.
+    
+    
+    \lsubsubsection{Forging LSA Fletcher-16 checksum}{flet-algo}
+    Let's first explain how this algorithm works. This algorithm initializes two 8-bit integers using modulo 255 \textit{c0} and $c_1$. Then every byte is added to $c_0$, and then $c_0$ is added to $c_1$. Finally, these two values are appended and create the 16-bit checksum.
+	    
+	    Now let $m[i]$ be the $i^{th}$ byte of the expected message, $m'[i]$ the $i^{th}$ byte of the (unmodified) forged message, $\ell$ the length of the message, and $x$ and $y$ the indices of the two bytes which we can choose freely . Then we can rewrite $c_0$ and $c_1$ to:
+	    %
+\begin{equation}\label{eq:1}
+\begin{cases}
+	c_0 = \sum\limits_{i=0}^{\ell} m[i] \mod{255}\\
+	c_1 = \sum\limits_{i=0}^{\ell} (\ell - i) \cdot m[i] \mod{255}
+\end{cases}
+\end{equation}
 
-    The first condition is a bit harder. First of all, we can predict the fightback LSA, including the priority fields (\textit{Sequence ID} and \textit{Checksum}). The \textit{Sequence ID} is easy to forge, but the checksum is impossible if we are not allowed any content of the LSA. Luckily, there are some reserved zero bytes which are documented as \\``\text{Should be set to zero [...] and must be ignored when receiv[ed]}''\cite{rfc-5340}{appendix A.3.1}. Now we can set the checksum to the predetermined value and make it a valid checksum by altering these bits.
-
-    In this way we have created a packet which is regarded equal compared to the fightback LSA, but also contains the value we want the link to be. After sending both packets, the targeded router makes a fightback LSA and floods it in the network. However, since our packet was first and all routers believe they just found a copy of the same LSA. Therefore they ignore it, resulting in our forged link weight being accepted and the correction being rejected.
-
+    		Now we also want this to hold for our forged message. We also know that $m[x] = m[y] = 0$. Therefore we can simplify \hyperref[eq:1]{Equation 1} to:
+\begin{equation}\label{eq:2}
+\begin{cases}
+	c_0 = c_0' + m'[x] + m'[y] \mod{255}\\
+	c_1 = c_1' + (\ell - x) \cdot m'[x] + (\ell - y) \cdot m'[y] \mod{255}
+\end{cases}
+\end{equation}
+	
+    	We have now obtained linear system with two equations and two unknowns. Solving the system in \hyperref[eq:2]{Equation 2} yields:
+    
+\begin{equation}\label{eq:3}
+\begin{cases}
+    m'[x] = \dfrac{\ \ (\ell - x) \cdot (c_0 - c_0') - (c_1 - c_1')}{y - x} \mod{255}\\
+    m'[y] = \dfrac{-(\ell - y) \cdot (c_0 - c_0') + (c_1 - c_1')}{y - x} \mod{255}
+\end{cases}
+\end{equation}
+		
+    		Note that since the result must be an integer modulo 255. In this case this means that we can only forge the checksum if the inverse of the difference of $x$ and $y$ in modulo 255 exists.
+    
+    \lsubsection{Sending the attack}{send_attack}
+    		We can now forge both LSAs where especially the second one has an equal values in the \textit{Sequence ID} and \textit{Checksum} fields compared to the expected fightback LSA.
+	    With this, we can send the first LSA to update the routing tables of the other routers and trigger the fightback LSA from the targeted router. Then we wait until the timeout has passed and send our second LSA just before the fightback which updates the sequence numbers in the other routing tables, but is ignored by the target router since it is not ``newer'' compared to the fightback LSA. Finally the fightback LSA is send and ignored by all other routers since it is evaluated as ``equal'' compared to our forged LSA by the other routers.
+	    
+	\lsubsection{Persistence}{persistence}
+		The attack is easily made persistent over time by listening to LSU packets. If there is an LSA in these LSU packets which deviates from the specified values for that link, then the attack is simply repeated.
+		Additionally, one can repeat the attack just before the LSA update is expected. For example, every LSA will be updated after a set amount of time (depends on configuration, default is 30 minutes).
+		
+    		
     \lsection{Discussion}{discussion}
-
-
-
+		
+		
+		
     \lsection{Results}{results}
-
-
-
+		
+		
+		
     %%%%%%%% References %%%%%%%%
     \begin{thebibliography}{999}
         \bibitem{ref}
