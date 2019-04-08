@@ -266,27 +266,38 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
 	    
 	\lsubsection{Persistence}{persistence}
 		The attack is easily made persistent over time by listening to LSU packets. If there is an LSA in these LSU packets which deviates from the specified values for that link, then the attack is simply repeated.
-		Additionally, one can repeat the attack just before the LSA update is expected. For example, every LSA will be updated after a set amount of time (depends on configuration, default is 30 minutes).
-		
-    		
-    \lsection{Discussion}{discussion}
-		
+		Additionally, one can repeat the attack just before the LSA update is expected. For example, every LSA will be updated after a set amount of time.
 		
 		
     \lsection{Results}{results}
+		In this report we described the outline of an attack on an OSPFv3 routing network which uses IPv6. We have implemented this attack for the router environment described in \textit{section \ref{sec:env_setup}}, and the open source code can be found on our github \cite{wiki}. We have also written our own OSPFv3 parser since no such non-integrated open source parser existed.
 		
+		Because OSPF is an old protocol with a lot of updates over the years, the documentation has become quite unreadable with the many references to older documents. In our project we have compiled these documents and wrote a summary the wiki page of our github \cite{wiki}.
+		
+		We were be able to obtain a man-in-the-middle position inside the network after executing our attack. We have shown this by redirecting the requests from any user in the network from \url{www.example.com} to a youtube video. Also any new user who connects to the network will be redirected while the attack is active.
+		It is possible to run the attack on any medium sized network after changing the command line arguments for the attack. It also allows the attacker to set the weights of any link in the network. Note that the weight of this link cannot be modified for the source router of that link.
+    		
+    		
+    \lsection{Discussion}{discussion}
+    		The goal and most important result of this project is the working attack on an OSPFv3 network. With this we have shown that the new OSPFv3 protocol is also not secure. Of course we have assumed that the victim network had a misconfigured router, but that was not an irrational assumption. It happens quite often that at least one router (if not all) is misconfigured, especially if that router is almost never used.
+    		Appart from the obtainable man-in-the-middle position, this attack can also be used for other purposes like redirecting traffic over a slow link during a (D)DOS attack to amplify the effect.
+    		
+		The OSPFv3 documentation and parser have made can be used as tool for any other project which uses OSPFv3.
+		The documentation provides a clear overview of the most important parts from the RFC documents, while still being clean and understandable. That being said, we really hope that the Network Working Group will transform their RFC change logs into a proper documentation one day.
+		
+		We did not implement the attack for all LSA types in our parser because we had only 5 weeks for the project. However, since it has a very modular structure, it can be easily modified to parse them in the future.
 		
 		
     %%%%%%%% References %%%%%%%%
     \begin{thebibliography}{999}
-        \bibitem{ref}
-        title,
-        author,
-        publisher,
-        Country e.d.
-        edition,
-        date,
-        url
+        %\bibitem{ref}
+        %title,
+        %author,
+        %publisher,
+        %Country e.d.
+        %edition,
+        %date,
+        %url
 
         \bibitem{wiki}
         OSPFv3 Protocol Wiki,
