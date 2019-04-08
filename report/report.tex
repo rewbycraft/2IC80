@@ -29,7 +29,7 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
 \usepackage{graphicx}        % For using pictures
 \usepackage{float}
 \usepackage{cases}           % For using fancy case statements
-
+\usepackage{pdfpages}
 \pagestyle{fancy}
 \renewcommand{\sectionmark}[1]{\markright{#1}}
 \fancyhf{}
@@ -96,19 +96,14 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
 
 
     \lsection{Introduction}{intro}
-    %Why interesting to do technical challenging, what do we need?
-
-
-    \lsection{Scenario}{scenario}
-    Gentco is one of the leading manufacturers of dashing Bowler Hats. Recently the price of unique, high quality Swiss leather that \textit{Gentco} relies on to make their most popular hat has gone up.\\
-    Management at \textit{Gentco} believes that their competitor, \textit{Dapper Inc.}, has been bribing \textit{Gentco}'s exclusive supplier in order to raise prices for Gentco. This would be in direct violation of the contract Gentco has with the supplier. Gentco management is reluctant to make such a direct claim without proof since, if they are wrong, this could deteriate the relationship even further.\\
-    That's why they want us to obtain proof of this. To do so, they want us to investigate \textit{Dapper Inc.} and figure out if they are indeed paying off \textit{Gentco}'s supplier.\\
-    We started off by obtaining a dump of \textit{Dapper Inc.}'s DNS records. One of the system admins had forgotten to disable zone transfers, so these were easily obtainable.\\
-    By looking at these records we discovered that \textit{Dapper Inc.} runs a very modern network, where everything uses IPv6. Undeterred, we started scanning the systems we discovered in the DNS dump. The networking team at \textit{Dapper Inc.} has the fortress locked up quite tight, but htey made one mistake. One of their core routers' management interfaces isn't firewalled off.\\
-    The SSH deamon's banner reveals that \textit{Dapper Inc.} uses some of the latest routers byso \textit{ACME Networks} Recently it was discovered that this vendor includes a hardcoded backdoor account with full privileges in all their routers. Using this account, we gained full access to this core router.\\
-    Now that we've got a foothold in their network, we need to obtain information. This router uses a Linux based OS assisted by application specific integrated circuits for high performance routing. This presents a problem. We cannot see the traffic passing through the router. The hardware is, however, capable of terminating GRE based tunnels and treating them as if they are physical ports. We also were able to perform some network reconnaisance and obtain a wealth of information about the structure of \textit{Dapper Inc.}'s network. This information is presented in \textit{Section \ref{sec:env_setup}}. Sadly, the rest of the network is secured quite well and we are unable to move beyond the router we are currently occupying.\\
-    While investigating \textit{Dapper Inc.}'s network, we discovered a recent blog post by \textit{Example Corp}, the makers of a \textit{Software as a Service} accounting application. They published a case study detailing how their AI-powered analytics helped \textit{Dapper Inc.} save several million dollars. It turns out that, although they seem to care a lot about their AI technology, they do not care about security. They aren't even using HTTPS! In other words: a golden oppertunity.\\
-    The plan is simple: If we can hijack \textit{Example Corp}'s /48 inside of \textit{Dapper Inc.}'s network and re-route it to a server under our control, we can capture the passwords of \textit{Dapper Inc.}'s accountants and confirm or deny that \textit{Dapper Inc.} is paying \textit{Gentco}' s supplier by accessing \textit{Dapper Inc's} financial reconds.
+    In the modern world computer networks are near-ubiquitous.
+    When a network has more than one router it is common to see a routing protocol in use to coordinate these routers.
+    The Open Shortest Path First protocol is one such routing protocol.
+    There are two main versions of it in use today.
+    Version 2 is used for most IPv4 based deployments while version 3 is used for most IPv6 and IPv4+IPv6 deployments.
+    The Disguised LSA attack has been well studied on version 2 of the protocol.
+    We were unable to find anyone who has actually attempted to perform the attack on version 3 of the protocol.
+    Here we attempt to do just that.
 
 
     \lsection{Objectives}{objectives}
@@ -121,18 +116,30 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
     \end{itemize}
 
 
-    \lsection{Environmental setup}{env_setup}
-    		We wanted to use an as realistic as possible scenario which was also not too complex. To this end, we came up with the diagram as can be seen in {\color{red} Figure ???}.
+    \lsection{Environment}{env_setup}
+    		We wanted to use an as realistic as possible scenario which was also not too complex.
+            The diagram we came up is included as figure \ref{netdiagram}.
     		
-    		\strut\\\\(Insert network diagram)\\\\\strut
-    		
-    		The idea is that each department is behind a firewall and has their own switch (layer D).
-    		THen there are two layers of routers. The first layer (layer C) is used to determine which ISP to use. The second layer (layer E) is used as border router.
-    		In our case we assume that \textit{ISP A} is a high speed fiber connection and \textit{ISP B} a slow backup satalite connection.
-    		Both ISP's then connect to an \textit{ISP C}, which is connected to the target and attacker servers.
-    		
-    		All weights in the network are 100, except for the links between router \textit{c2} and the ISP's.
-    		We made these 2 weights 1000 since the traffic should only pass through router \textit{c2} if router \textit{c1} is down.
+    		We consider the fictional company Dapper Inc which owns a campus of buildings.
+            Each building houses a number of departments.
+            Each department has its own firewall.
+            Each building also has a redundant pair of Layer 3 switches to which each firewall in the building connects.
+            These switches are connected in a ring-topology between buildings to form the network core.
+
+            There are two routers, e1 and e2, which are located in remote datacenters and provide internet connectivity from two different ISPs.
+            There are also two routers, c1 and c2, in one of the building on-campus which connect the core with the two remote routers.
+
+            There are high-capacity dedicated fiber wavelengths from c1 to both e1 and e2 and a pair of (relatively) low-capacity broadband-based backup circuits from c2 to e1 and e2.
+
+    		All weights in the network are 100, except for the links between router \textit{c2} and e1 and e2, which are of weight 1000, since this connection is of much lower capacity and should only be used in case the primary connection via c1 is malfunctioning.
+
+
+    \begin{figure}[htb]
+        \centering
+        \includegraphics[height=\textheight]{netdiagram.pdf}
+        \caption{Network diagram.}
+        \label{netdiagram}
+    \end{figure}
 
 
     \lsection{Protocol}{protocol}
