@@ -122,9 +122,17 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
 
 
     \lsection{Environmental setup}{env_setup}
-    TODO:
-    - Describe the setup of the environment (show picture).
-    - Explain rationale behind it.
+    		We wanted to use an as realistic as possible scenario which was also not too complex. To this end, we came up with the diagram as can be seen in {\color{red} Figure ???}.
+    		
+    		\strut\\\\(Insert network diagram)\\\\\strut
+    		
+    		The idea is that each department is behind a firewall and has their own switch (layer D).
+    		THen there are two layers of routers. The first layer (layer C) is used to determine which ISP to use. The second layer (layer E) is used as border router.
+    		In our case we assume that \textit{ISP A} is a high speed fiber connection and \textit{ISP B} a slow backup satalite connection.
+    		Both ISP's then connect to an \textit{ISP C}, which is connected to the target and attacker servers.
+    		
+    		All weights in the network are 100, except for the links between router \textit{c2} and the ISP's.
+    		We made these 2 weights 1000 since the traffic should only pass through router \textit{c2} if router \textit{c1} is down.
 
 
     \lsection{Protocol}{protocol}
@@ -274,7 +282,7 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
 		
 		Because OSPF is an old protocol with a lot of updates over the years, the documentation has become quite unreadable with the many references to older documents. In our project we have compiled these documents and wrote a summary the wiki page of our github \cite{wiki}.
 		
-		We were be able to obtain a man-in-the-middle position inside the network after executing our attack. We have shown this by redirecting the requests from any user in the network from \url{www.example.com} to a youtube video. Also any new user who connects to the network will be redirected while the attack is active.
+		We were be able to obtain a man-in-the-middle position inside the network after executing our attack. We have shown this by redirecting the requests from any user in the network from \textit{Example Corp} to a youtube video. Also any new user who connects to the network will be redirected while the attack is active.
 		It is possible to run the attack on any medium sized network after changing the command line arguments for the attack. It also allows the attacker to set the weights of any link in the network. Note that the weight of this link cannot be modified for the source router of that link.
     		
     		
