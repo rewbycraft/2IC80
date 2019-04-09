@@ -106,32 +106,22 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
     Here we attempt to do just that.
 
 
-    \lsection{Objectives}{objectives}
-    The main objective is to spy on and redirect traffic in \textit{Dapper Inc.}'s network. To achieve this, we assume the following case:
-    \begin{itemize}
-        \item Full control over router C2 (see \textit{Section \ref{sec:env_setup}}).
-        \item Method exploits OSPFv3 to re-route traffic to \textit{Example Corp} from the \textit{Accounting Dept.} via C2.
-        \item Send traffic destined for \textit{Example Corp} to an attacker-controlled server.
-        \item This server has been connected via a GRE tunnel to C2.
-    \end{itemize}
-
-
     \lsection{Environment}{env_setup}
-    		We wanted to use an as realistic as possible scenario which was also not too complex.
-            The diagram we came up with is included as figure \ref{netdiagram}.
-    		
-    		We consider the fictional company Dapper Inc which owns a campus of buildings.
-            Each building houses a number of departments.
-            Each department has its own firewall.
-            Each building also has a redundant pair of Layer 3 switches to which each firewall in the building connects.
-            These switches are connected in a ring-topology between buildings to form the network core.
+    We wanted to use an as realistic as possible scenario which was also not too complex.
+    The diagram we came up with is included as figure \ref{netdiagram}.
 
-            There are two routers, e1 and e2, which are located in remote datacenters and provide internet connectivity from two different ISPs.
-            There are also two routers, c1 and c2, in one of the building on-campus which connect the core with the two remote routers.
+    We consider the fictional company Dapper Inc which owns a campus of buildings.
+    Each building houses a number of departments.
+    Each department has its own firewall.
+    Each building also has a redundant pair of Layer 3 switches to which each firewall in the building connects.
+    These switches are connected in a ring-topology between buildings to form the network core.
 
-            There are high-capacity dedicated fiber wavelengths from c1 to both e1 and e2 and a pair of (relatively) low-capacity broadband-based backup circuits from c2 to e1 and e2.
+    There are two routers, \textit{e1} and \textit{e2}, which are located in remote datacenters and provide internet connectivity from two different ISPs.
+    There are also two routers, \textit{c1} and \textit{c2}, in one of the building on-campus which connect the core with the two remote routers.
 
-    		All weights in the network are 100, except for the links between router \textit{c2} and e1 and e2, which are of weight 1000, since this connection is of much lower capacity and should only be used in case the primary connection via c1 is malfunctioning.
+    There are high-capacity dedicated fiber wavelengths from \textit{c1} to both \textit{e1} and \textit{e2} and a pair of (relatively) low-capacity broadband-based backup circuits from \textit{c2} to \textit{e1} and \textit{e2}.
+
+    All weights in the network are 100, except for the links between router \textit{c2} and \textit{e1} and \textit{e2}, which are of weight 1000, since this connection is of much lower capacity and should only be used in case the primary connection via \textit{c1} is malfunctioning.
 
 
     \begin{figure}[htb]
@@ -142,38 +132,86 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
     \end{figure}
 
 
-    \lsection{Protocol}{protocol}
-    Before coding up an attack, we must first understand the protocol and discover where it's weaknesses and strengths are. The results of this orientative phase are documented in our wiki \cite{wiki}.
-    \lsubsection{OSPFv3 Packet}{ospfv3_packet}
-    The most important (sub-)packates of the protocol are:
+    \lsection{Objectives}{objectives}
+    The main objective is to spy on and redirect traffic in \textit{Dapper Inc.}'s network.
+    To achieve this, we assume the following case:
     \begin{itemize}
-        \item \textbf{Hello Packet}\\
+        \item Full control over router \textit{c2} (see \textit{Section \ref{sec:env_setup}}).
+        \item Method exploits OSPFv3 to re-route traffic to \textit{Example Corp} from the \textit{Accounting Dept} via router \textit{c2}.
+        \item Send traffic destined for \textit{Example Corp} to an attacker-controlled server.
+        \item This server has been connected via a GRE tunnel to router \textit{c2}.
+    \end{itemize}
+
+    \lsection{Protocol}{protocol}
+    Before coding up an attack, we must first understand the protocol and discover where it's weaknesses and strengths are.
+    The results of this orientative phase are documented in our wiki \cite{wiki}.
+
+    We view an OSPF packet as a tree structure where each node is a ``subpacket''.
+    At the root of this is the main OSPF header as specified in section A.3.1 of RFC5340. \cite[A.3.1]{rfc-5340}
+    \lsubsection{OSPFv3 Packet}{ospfv3_packet}
+    The most important (sub-)packets of the protocol are:
+    \begin{itemize}
+        \item \textbf{Hello Packet}
+
         Used to keep the link alive.
-        \item \textbf{Database Description Packets}\\
-        This packet is used in the database exchange protocol, where this packet announces the available entries.
-        \item \textbf{Link State Request}\\
-        This packet is used in the database exchange protocol, where this packet announces the needed entries.
-        \item \textbf{Link State Update}\\
-        This packet is used to keep the link weights up to date, and used in the database exchange protocol to initialize entries.
-        \item \textbf{Link State Acknowledgement}\\
+        \item \textbf{Database Description Packets}
+
+        This packet is used in the database exchange protocol, where this packet contains a list of partial LSA headers.
+        These partial LSA headers contains enough information to determine which, if any, LSAs you are missing from your database.
+        In the second step of the exchange process you can then request the other router to send you the full LSAs that you are missing.
+        \item \textbf{Link State Request}
+
+        This packet is used in the database exchange protocol.
+        This packet contains a list of LSAs which the originating router is missing and wants to be (re-)sent to it.
+        \item \textbf{Link State Update}
+
+        This is the packet used to exchange LSAs between two neighbouring routers.
+        This packet is used to both flood updated LSAs through the network and to transfer LSAs during the database exchange process.
+        It is notable that this packet is rate-limited to 1 per second.
+        \item \textbf{Link State Acknowledgement}
+
         Packet for acknowledging Link State Update packets
     \end{itemize}
     \lsubsection{LSA Packet}{lsa_packet}
-    All \textit{Link State} (LS) OSPF packets which we used contain \textit{Link State Anouncement} (LSA) packets. There are multiple LSA types (see our wiki\cite{wiki} for detailed info), however the most important fields are:
+    All \textit{Link State} (LS) OSPF packets which we used contain \textit{Link State Anouncement} (LSA) packets.
+    For our purposes, the general LSA header contains the following relevant fields:
     \begin{itemize}
-        \item \textbf{Age}\\
+        \item \textbf{Age}
+
         How long a package has lived so far.
-        \item \textbf{Checksum}\\
+        \item \textbf{Checksum}
+
         The Fletcher's checksum\cite{fletcher} of the LSA.
-        \item \textbf{Sequence ID}\\
-        The sequence number of this LSA. Is increased in every \textit{LS Update Packet}
-        \item \textbf{metric}\\
+        \item \textbf{Sequence ID}
+        The sequence number of this LSA. Is increased in every \textit{LS Update Packet}.
+    \end{itemize}
+
+    There are multiple LSA types (see our wiki\cite{wiki} for detailed info), however we mostly concern ourselves with the Router-LSA type. The relevant fields in this sub-packet are:
+    \begin{itemize}
+        \item \textbf{Interface ID}
+
+        An ID number identifying an interface on a router.
+        These numbers are locally significant to the router that originates the LSA.
+
+        \item \textbf{Neighbour Interface ID}
+
+        An ID number identifying an interface on a neighbour router.
+        \item \textbf{Neighbour Router ID}
+
+        An ID number identifying the neighbouring router.
+        \item \textbf{Metric}
+
         The weight/cost of a link.
     \end{itemize}
 
     \lsubsubsection{LSA priority}{lsa_priority}
-    To save processing time, the equality of two LSA's is not determined by checking both packets byte by byte, but by certain fields in the packet. Also, if there is already an old packet in the database then it should be removed. On the other hand, a LSA packet returning to the originating router should not initiate a fightback LSA (see \textit{section \ref{sec:fightback}}). For this purpose, the OSPFv3 protocol defines priority and equality of two packets.
-    A LSA packet \texttt{A} has a higer priority than LSA packet \texttt{B} if (in order):
+    To save processing time, the equality of two LSA's is not determined by checking both packets byte by byte, but by comparing certain fields in the packet.
+    If a router receives an LSA that it considers to be newer than the one it already has (or if it doesn't have this LSA yet) it will install it in its database.
+    If, however, this LSA is equal to or older than the LSA already in the database it will be discarded.
+
+    A LSA packet returning to the originating router should not initiate a fightback LSA (see \textit{section \ref{sec:fightback}}) if it is equal to a valid LSA it has sent.
+    For this purpose, the OSPFv3 protocol defines priority and equality of two packets.
+    A LSA packet \texttt{A} has a higher priority / is newer than another LSA packet \texttt{B} if and only if (in order):
     \begin{enumerate}
         \item The \textit{Sequence ID} of packet \texttt{A} is higher than the \textit{Sequence ID} of packet \texttt{B}
         \item The \textit{Checksum} of packet \texttt{A} is higher than the checksum of packet \texttt{B}.
@@ -181,6 +219,7 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
         \item The difference between the \textit{Age} of packet \texttt{A} and \texttt{B} is more than the maximum allowed difference, and the \textit{Age} of \texttt{A} is higher.
     \end{enumerate}
     If none of these cases hold for either of the packets, then the two LSAs are regarded equal.
+
     \lsection{Parser}{parser}
     One of the key challenges in actually executing this attack is interpreting and generating OSPFv3 packets.
     Many of the security-research oriented sniffing/interception/packet-forging tools, such as scapy and libtins, include a parser and emitter for OSPFv2.
@@ -192,15 +231,26 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
     Nonetheless, we managed to create this novel piece of software.
     Our parser/emitter has been written to be very modular and self-contained, thus enabling it to be easily re-used by other projects in the future.
 
+    The source is commented and is available from our GitHub repository. \cite{wiki}
 
     \lsection{Attack engineering}{attack}
-    The router we have compromised is used as backup link, so the links are very costly and is therefore not choosen as a node in any path. Hence initially we cannot control any packets in the network. To change this, we need to convince the other routers that our connection is the fastest one. We can achieve this by `telling' the other routers that our route has the lowest cost. If these routers believe us, then all packets are routed through our router, hence resulting in full control over the network.
+    The router we have compromised is used as backup link, so the links are very costly and is therefore not chosen as a node in any path.
+    Hence initially we cannot control any packets in the network.
+    To change this, we need to convince the other routers that our connection is the lowest cost path.
+    We can achieve this by ``telling'' the other routers that our route has the lowest cost.
+    Or, alternatively, by telling the other routers that the usual path has a higher cost.
+    If these routers believe us, then all packets are routed through our router, hence resulting in full control over the data that flows through the network.
 
-    We can `tell' the other routers the weight of a link using a \textit{Link State Update} (LSU) packet. If they believe our update message, then they will also update their lowest cost path accordingly.
-    
-    In this way we can let routers dislike certain routes and redirect all traffic to our router. Once a message is send to our router, we can send to our server outside the network. In this way we have obtained a man in the middle position inside the network.
-    
-    However, OSPF has a nasty fightback mechanism which will directly repair the original weight if a faulty weight was announced. We also need some additional information regarding the network. Both will be discussed in this section.
+    We can ``tell'' the other routers the weight of a link using a \textit{Link State Update} (LSU) packet.
+    If they believe our update message, then they will also update their lowest cost path accordingly.
+
+    In this way we can let routers dislike certain routes and redirect all traffic to our router.
+    Once a message is sent to our router, we can send it to our server outside the network.
+    In this way we can create a man-in-the-middle position inside the network.
+
+    However, OSPF has a fightback mechanism which will attempt to repair the original weight if an incorrect weight was flooded.
+    We also need some additional information regarding the network.
+    Both will be discussed in the next sections.
 
     \lsubsection{Attack preperation}{attack_prep}
     Before we can perform an attack on an OSPF network, we need to gather some information about the network.
@@ -210,7 +260,7 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
         \item The router ID, address and interface on which at least one OSPF neighbor of the router we control is located.
 
         This neighbor must \textit{not} be one of the endpoints of a link we wish to attack.
-        We need a "thrid party" neighbor who will flood any \textit{Link State Update} we send it to the rest of the network.
+        We need a ``third party'' neighbor who will flood any \textit{Link State Update} we send it to the rest of the network.
         \item A copy of the link state database.
 
         Although we know which links to attack, we need to have a copy of the actual most-recent LSA of all routers involved in the attack.
@@ -219,90 +269,136 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
     In order to obtain the neighbor we need, we first listen for OSPF hello packets.
     These are sent every few seconds and we simply extract the information we need from the first one we capture that matches our requirements.
 
-    Next we need to trigger that neighbor to exchange its Link State DataBase.
+    Next we need to trigger that neighbor to exchange its Link State Database.
     We can do this by sending a Database Description packet with an invalid sequence number.
     This makes the neighbor think that something went wrong during the previous exchange and will cause it to perform a full database exchange with the router we are located on.
     By capturing the packets from both sides, we can build up a list of LSAs that are in the database.
 
-    However, the DataBase Exchange does not contain the actual LSAs that we need.
+    However, the Database Exchange does not contain the actual LSAs that we need.
     Luckily it contains enough information for us to create a Link State Request packet to request the neighbor to transmit its entire database.
 
     \lsubsection{Fightback mechanism}{fightback}
-    The fightback mechanism is initiated when a router receives a LSU packet which states that it was originated by the receiving router, and is newer than the last LSA the router has send for that link (see \textit{Section \ref{sec:lsa_priority}}). This router then creates a LSU which is newer than the received LSU and with the correct data. By doing so, the network is secure against packet corruption, but is it also secure agains an attacker?
+    The fightback mechanism is initiated when a router receives a LSU packet which states that it was originated by the receiving router, and is newer than the last LSA the router has sent (see \textit{Section \ref{sec:lsa_priority}}).
+    This router then creates a LSU which is newer than the received LSU and with the correct data.
+    By doing so, the network is secure against packet corruption, but is it also secure against an attacker?
 
-    There are three main approaches in attacking the fightback mechanism. The first is to prevent the fightback from being sent. This is impossible since it requires us to have control over all links to this router, which we don't have.
+    There are three main approaches in attacking the fightback mechanism.
+    The first is to prevent the fightback from being sent.
+    This is impossible since it requires us to have control over all links to this router, which we don't have.
 
-    The second approach is to not let the fightback LSA reach the other routers. This is alsmost the same as the first approach, since it requires us to have control over all links from this router.
+    The second approach is to not let the fightback LSA reach the other routers.
+    This is almost the same as the first approach, since it requires us to have control over all links from this router.
+    Therefore this approach is also not viable.
 
-    That leaves us with the third approach, which is letting the other routers ignore the fightback LSA. This already happens naturally when two routers flood the same LSA to another third router. In this case, the second arriving packet will be ignored (see \textit{Section \ref{sec:lsa_priority}}). So we have to forge an LSA which is regarded equal compared to the fightback LSA -- but has the modified link weight -- and it must arrives earlier than the fightback LSA.
-    
-    Since every router ignores LSAs for a certain link for a certain amount of time after receiving one, the fightback must wait for this timeout to pass. To be sure the timeout has passed on all routers in the network, some extra wait time is introduced for the fightback LSA. We can use this to ensure that our packet will arrive before the fightback.
+    That leaves us with the third approach, which is letting the other routers ignore the fightback LSA.
+    This already happens naturally when two routers flood the same LSA to a third router.
+    In this case, the second arriving packet will be ignored (see \textit{Section \ref{sec:lsa_priority}}).
+    So we have to forge an LSA which is regarded as equal compared to the fightback LSA -- but has the modified link weight -- and it must arrives earlier than the fightback LSA.
 
-	\lsubsection{Checksum}{checksum}
-    The first condition is a bit harder. First of all, we can predict the exact fightback LSA, especialy the priority fields (\textit{Sequence ID} and \textit{Checksum}). The \textit{Sequence ID} is easy to forge, but forging the checksum is impossible if we are not allowed to modify any content of the LSA. Luckily, there are some reserved zero bytes which are documented as ``\text{Should be set to zero [...] and must be ignored when receiv[ed]}'' \cite[appendix A.3.1]{rfc-5340}.
-    
-    The \textit{Fletcher-16 bit}\cite{fletcher} checksum is used as basis checksum algorithm Afterwards, some extra computations are added to simplify the verification algorithm. This last step can be easily reverse engineered, so this step will be ignored in the rest of the paper for the sake of simplicity. The fletcher checksum however requires some linear algebra.
-    
-    
-    \lsubsubsection{Forging LSA Fletcher-16 checksum}{flet-algo}
-    Let's first explain how this algorithm works. This algorithm initializes two 8-bit integers using modulo 255 \textit{c0} and $c_1$. Then every byte is added to $c_0$, and then $c_0$ is added to $c_1$. Finally, these two values are appended and create the 16-bit checksum.
-	    
-	    Now let $m[i]$ be the $i^{th}$ byte of the expected message, $m'[i]$ the $i^{th}$ byte of the (unmodified) forged message, $\ell$ the length of the message, and $x$ and $y$ the indices of the two bytes which we can choose freely . Then we can rewrite $c_0$ and $c_1$ to:
-	    %
-\begin{equation}\label{eq:1}
-\begin{cases}
-	c_0 = \sum\limits_{i=0}^{\ell} m[i] \mod{255}\\
-	c_1 = \sum\limits_{i=0}^{\ell} (\ell - i) \cdot m[i] \mod{255}
-\end{cases}
-\end{equation}
+    Since every router ignores LSAs for a certain link for a certain amount of time after receiving one, the fightback must wait for this timeout to pass.
+    To be sure the timeout has passed on all routers in the network, some extra wait time is introduced for the fightback LSA. We can use this to ensure that our packet will arrive before the fightback.
 
-    		Now we also want this to hold for our forged message. We also know that $m[x] = m[y] = 0$. Therefore we can simplify \hyperref[eq:1]{Equation 1} to:
-\begin{equation}\label{eq:2}
-\begin{cases}
-	c_0 = c_0' + m'[x] + m'[y] \mod{255}\\
-	c_1 = c_1' + (\ell - x) \cdot m'[x] + (\ell - y) \cdot m'[y] \mod{255}
-\end{cases}
-\end{equation}
-	
-    	We have now obtained linear system with two equations and two unknowns. Solving the system in \hyperref[eq:2]{Equation 2} yields:
-    
-\begin{equation}\label{eq:3}
-\begin{cases}
-    m'[x] = \dfrac{\ \ (\ell - x) \cdot (c_0 - c_0') - (c_1 - c_1')}{y - x} \mod{255}\\
-    m'[y] = \dfrac{-(\ell - y) \cdot (c_0 - c_0') + (c_1 - c_1')}{y - x} \mod{255}
-\end{cases}
-\end{equation}
-		
-    		Note that since the result must be an integer modulo 255. In this case this means that we can only forge the checksum if the inverse of the difference of $x$ and $y$ in modulo 255 exists.
-    
+    We can be fairly sure that a forged fightback LSA will flood before the legitimate one because we can send it 1 second after the initial LSA, but it will take at least 1 second for the targeted router to receive our LSA and then another second for it to send its fightback.
+
+    \lsubsection{Checksum}{checksum}
+    The hard part of this approach is creating a forged fightback LSA that appears to be equal to the legitimate one.
+    First of all, we can predict the exact fightback LSA, especially the priority fields (\textit{Sequence ID} and \textit{Checksum}).
+    The \textit{Sequence ID} is easy to forge, but forging the checksum is impossible if we are not allowed to modify any content of the LSA.
+    Luckily, there are some reserved zero bytes which are documented as ``\text{Should be set to zero [...] and must be ignored when receiv[ed]}'' \cite[appendix A.3.1]{rfc-5340}.
+    We can use these fields to influence the checksum value without changing how the LSA is interpreted.
+
+    The \textit{Fletcher-16}\cite{fletcher} checksum is used as basis checksum algorithm.
+    Afterwards, some extra computations are added to simplify the verification algorithm.
+    This last step can be easily reverse engineered, so this step will be ignored in the rest of the paper for the sake of simplicity.
+    The Fletcher checksum, however, requires some linear algebra to reverse.
+
+    \lsubsubsection{Forging a LSAs Fletcher-16 checksum}{flet-algo}
+    Let's first explain how this algorithm works.
+    This algorithm initializes two 8-bit integers using modulo 255 \textit{c0} and $c_1$.
+    Then every byte is added to $c_0$, and then $c_0$ is added to $c_1$.
+    Finally, these two values are appended and create the 16-bit checksum.
+
+    Now let $m[i]$ be the $i^{th}$ byte of the expected message, $m'[i]$ the $i^{th}$ byte of the (unmodified) forged message, $\ell$ the length of the message, and $x$ and $y$ the indices of the two bytes which we can choose freely.
+    Then we can rewrite $c_0$ and $c_1$ to:
+    %
+    \begin{equation}
+        \label{eq:1}
+        \begin{cases}
+            c_0 = \sum\limits_{i=0}^{\ell} m[i] \mod{255}\\
+            c_1 = \sum\limits_{i=0}^{\ell} (\ell - i) \cdot m[i] \mod{255}
+        \end{cases}
+    \end{equation}
+
+    Now we also want this to hold for our forged message.
+    We also know that $m[x] = m[y] = 0$.
+    Therefore we can simplify \hyperref[eq:1]{Equation 1} to:
+    \begin{equation}
+        \label{eq:2}
+        \begin{cases}
+            c_0 = c_0' + m'[x] + m'[y] \mod{255}\\
+            c_1 = c_1' + (\ell - x) \cdot m'[x] + (\ell - y) \cdot m'[y] \mod{255}
+        \end{cases}
+    \end{equation}
+
+    We have now obtained linear system with two equations and two unknowns.
+    Solving the system in \hyperref[eq:2]{Equation 2} yields:
+
+    \begin{equation}
+        \label{eq:3}
+        \begin{cases}
+            m'[x] = \dfrac{\ \ (\ell - x) \cdot (c_0 - c_0') - (c_1 - c_1')}{y - x} \mod{255}\\
+            m'[y] = \dfrac{-(\ell - y) \cdot (c_0 - c_0') + (c_1 - c_1')}{y - x} \mod{255}
+        \end{cases}
+    \end{equation}
+
+    Note that the result must be an integer modulo 255.
+    In this case this means that we can only forge the checksum if the inverse of the difference of $x$ and $y$ in modulo 255 exists.
+
     \lsubsection{Sending the attack}{send_attack}
-    		We can now forge both LSAs where especially the second one has an equal values in the \textit{Sequence ID} and \textit{Checksum} fields compared to the expected fightback LSA.
-	    With this, we can send the first LSA to update the routing tables of the other routers and trigger the fightback LSA from the targeted router. Then we wait until the timeout has passed and send our second LSA just before the fightback which updates the sequence numbers in the other routing tables, but is ignored by the target router since it is not ``newer'' compared to the fightback LSA. Finally the fightback LSA is send and ignored by all other routers since it is evaluated as ``equal'' compared to our forged LSA by the other routers.
-	    
-	\lsubsection{Persistence}{persistence}
-		The attack is easily made persistent over time by listening to LSU packets. If there is an LSA in these LSU packets which deviates from the specified values for that link, then the attack is simply repeated.
-		Additionally, one can repeat the attack just before the LSA update is expected. For example, every LSA will be updated after a set amount of time.
-		
-		
+    We can now forge both LSAs where especially the second one has an equal values in the \textit{Sequence ID} and \textit{Checksum} fields compared to the expected fightback LSA.
+    With this we can send the first LSA to update the routing tables of the other routers and trigger the fightback LSA from the targeted router.
+    Then we wait until the send-timeout has passed and send our second LSA just before the legitimate fightback-LSA gets sent.
+    This updates the sequence numbers in the other routing tables.
+    The forged fightback LSA is ignored by the target router since it is not ``newer'' compared to the legitimate fightback LSA.
+    Finally the legitimate fightback LSA is sent and ignored by all other routers since it is evaluated as ``equal'' compared to our forged LSA by the other routers.
+
+    \lsubsection{Persistence}{persistence}
+    The attack is easily made persistent over time by listening to LSU packets.
+    If there is an LSA in these LSU packets which deviates from the specified values for that link, then the attack is simply repeated.
+    Additionally, one can repeat the attack just before the LSA update is expected since LSAs are re-flooded every 30 minutes.
+
+
     \lsection{Results}{results}
-		In this report we described the outline of an attack on an OSPFv3 routing network which uses IPv6. We have implemented this attack for the router environment described in \textit{section \ref{sec:env_setup}}, and the open source code can be found on our github \cite{wiki}. We have also written our own OSPFv3 parser since no such non-integrated open source parser existed.
-		
-		Because OSPF is an old protocol with a lot of updates over the years, the documentation has become quite unreadable with the many references to older documents. In our project we have compiled these documents and wrote a summary the wiki page of our github \cite{wiki}.
-		
-		We were be able to obtain a man-in-the-middle position inside the network after executing our attack. We have shown this by redirecting the requests from any user in the network from \textit{Example Corp} to a youtube video. Also any new user who connects to the network will be redirected while the attack is active.
-		It is possible to run the attack on any medium sized network after changing the command line arguments for the attack. It also allows the attacker to set the weights of any link in the network. Note that the weight of this link cannot be modified for the source router of that link.
-    		
-    		
+    In this report we described the outline of an attack on an OSPFv3 routing network which uses IPv6.
+    We have implemented this attack for the router environment described in \textit{section \ref{sec:env_setup}}, and the open source code can be found on our github \cite{wiki}.
+    We have also written our own OSPFv3 parser since no such non-integrated open source parser existed.
+
+    Because OSPF is an old protocol with a lot of updates over the years, the documentation has become quite unreadable with the many references to older documents.
+    In our project we have compiled these documents and wrote a summary the wiki page of our github \cite{wiki}.
+
+    We were be able to obtain a man-in-the-middle position inside the network after executing our attack.
+    We have shown this by redirecting the requests from any user in the network from \textit{Example Corp} to a youtube video.
+    Also any new user who connects to the network will be redirected while the attack is active since this attack targets the network core instead of the edge devices.
+    It is possible to run the attack on any medium sized network after changing the command line arguments for the attack.
+    It also allows the attacker to set the weights of any link in the network.
+    Note that the weight of this link cannot be modified for the source router of that link.
+
+
     \lsection{Discussion}{discussion}
-    		The goal and most important result of this project is the working attack on an OSPFv3 network. With this we have shown that the new OSPFv3 protocol is also not secure. Of course we have assumed that the victim network had a misconfigured router, but that was not an irrational assumption. It happens quite often that at least one router (if not all) is misconfigured, especially if that router is almost never used.
-    		Appart from the obtainable man-in-the-middle position, this attack can also be used for other purposes like redirecting traffic over a slow link during a (D)DOS attack to amplify the effect.
-    		
-		The OSPFv3 documentation and parser have made can be used as tool for any other project which uses OSPFv3.
-		The documentation provides a clear overview of the most important parts from the RFC documents, while still being clean and understandable. That being said, we really hope that the Network Working Group will transform their RFC change logs into a proper documentation one day.
-		
-		We did not implement the attack for all LSA types in our parser because we had only 5 weeks for the project. However, since it has a very modular structure, it can be easily modified to parse them in the future.
-		
-		
+    The goal and most important result of this project is the working attack on an OSPFv3 network.
+    With this we have shown that the new OSPFv3 protocol is also not secure.
+    Of course we have assumed that the victim network already had a misconfigured router, but that was not an irrational assumption.
+    It happens quite often that at least one router (if not all) are misconfigured, especially if that router is almost never used.
+    Apart from the obtainable man-in-the-middle position, this attack can also be used for other purposes like redirecting traffic over a slow link during a (D)DOS attack to amplify the effect.
+
+    The OSPFv3 documentation and parser have made can be used as tool for any other project which uses OSPFv3.
+    The documentation provides a clear overview of the most important parts from the RFC documents, while still being clean and understandable.
+    That being said, we really hope that the Network Working Group will transform their RFC change logs into a proper documentation one day.
+
+    We did not implement the attack for all LSA types in our parser because we had only 5 weeks for the project.
+    However, it has a very modular structure so it can be easily modified to parse them in the future.
+
+
     %%%%%%%% References %%%%%%%%
     \begin{thebibliography}{999}
         %\bibitem{ref}
@@ -346,7 +442,7 @@ Roelf Wichertjes (1008016) \&\\ Kaj Wortel (0991586)
         R. Coltun at al.,
         July 2008,
         \url{https://tools.ietf.org/html/rfc5340}
-        
+
         \bibitem{rfc-4861}
         IPv6 Neighbor Discovery - RFC 4861,
         T.Narten at al.,
